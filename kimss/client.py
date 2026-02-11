@@ -16,6 +16,11 @@ class KimssClient:
     """
 
     def __init__(self, api_key: str, base_url: str = "https://api.kimss.ai"):
+        """
+        api_key: From Kimss app → Developer Settings → API Keys.
+        base_url: Your actual Kimss API URL (e.g. https://your-app.azurewebsites.net).
+                  The default is a placeholder; use your deployment URL or you may get connection errors.
+        """
         self.api_key = api_key.strip()
         self.base_url = base_url.rstrip("/")
         self.headers = {"X-Kimss-Key": self.api_key, "Content-Type": "application/json"}

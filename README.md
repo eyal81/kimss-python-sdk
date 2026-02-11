@@ -20,12 +20,17 @@ Use a **long-lived API key** (not a browser session token). Create keys in your 
 
 ## Usage
 
+Pass your **actual API base URL** (the one your Kimss provider gave you). The default `https://api.kimss.ai` is only a placeholder — set `base_url` or you will get connection errors.
+
+- **Prefer the APIM gateway URL** if your provider uses one (e.g. `https://xxx.azure-api.net`): one stable URL for all users.
+- Backend URLs (e.g. `...azurewebsites.net`) are per deployment; not the same for every user.
+
 ```python
 from kimss import KimssClient, Agent
 
 client = KimssClient(
     api_key="kimss_xxxxxxxxxxxxxxxxxxxxxxxx",  # from Developer Settings
-    base_url="https://api.kimss.ai",          # or your deployment URL
+    base_url="https://your-apim.azure-api.net",  # or the URL your provider gave you (no trailing slash)
 )
 
 # Get an agent and send a message
@@ -42,7 +47,7 @@ result3 = client.chat(assistant_id="asst_xxxx", message="Hi", thread_id=result.g
 
 ## API
 
-- **`KimssClient(api_key, base_url="https://api.kimss.ai")`** – authenticated client.
+- **`KimssClient(api_key, base_url="...")`** – authenticated client. `base_url` must be your real Kimss API (e.g. Azure or APIM URL).
 - **`client.get_agent(agent_id)`** – returns an `Agent` for that assistant.
 - **`agent.query(message, thread_id=None, chat_type="user_chat")`** – send a message; returns the `res` object from `POST /assistant_chat/`.
 - **`client.chat(assistant_id, message, thread_id=None, chat_type="user_chat")`** – one-off chat without an Agent handle.
