@@ -1,6 +1,7 @@
 """Kimss Python SDK – lightweight client for Kimss conversational AI API."""
 from .client import KimssClient, Agent
 from .environment import KimssEnv, current_env, env_label, is_staging, redis_cache_namespace_infix
+from .privacy import BeforeRequestHook, PresidioRedactor
 
 __all__ = [
     "KimssClient",
@@ -10,4 +11,6 @@ __all__ = [
     "env_label",
     "is_staging",
     "redis_cache_namespace_infix",
+    "BeforeRequestHook",
+    "PresidioRedactor",
 ]

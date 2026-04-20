@@ -4,9 +4,16 @@ Use X-Kimss-Key for authentication (long-lived API key from your Kimss Developer
 """
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+import logging
+from typing import Any, Callable, Dict, List, MutableMapping, Optional
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
+from .privacy import BeforeRequestHook
+
+logger = logging.getLogger(__name__)
 
 
 def _normalize_parameters(parameters: Any) -> Dict[str, Any]:
@@ -18,21 +25,78 @@ def _normalize_parameters(parameters: Any) -> Dict[str, Any]:
     return dict(parameters)
 
 
+def _default_retry() -> Retry:
+    return Retry(
+        total=4,
+        connect=3,
+        read=3,
+        status=3,
+        backoff_factor=0.6,
+        status_forcelist=(429, 500, 502, 503, 504),
+        allowed_methods=frozenset({"POST", "GET"}),
+        raise_on_status=False,
+        respect_retry_after_header=True,
+    )
+
+
 class KimssClient:
     """
     Client for the Kimss API. Authenticate with a long-lived API key.
     Create keys at: your Kimss app → Developer Settings → API Keys.
     """
 
-    def __init__(self, api_key: str, base_url: str = "https://api.kimss.ai"):
+    def __init__(
+        self,
+        api_key: str,
+        base_url: str = "https://api.kimss.ai",
+        *,
+        before_request_hooks: Optional[List[BeforeRequestHook]] = None,
+        privacy: Any = None,
+        session: Optional[requests.Session] = None,
+        retry: Optional[Retry] = None,
+    ):
         """
         api_key: From Kimss app → Developer Settings → API Keys.
         base_url: Your actual Kimss API URL (e.g. https://your-app.azurewebsites.net).
-                  The default is a placeholder; use your deployment URL or you may get connection errors.
+        before_request_hooks: Optional callables invoked as hook(ctx) where ctx is
+            {"path": str, "json": dict, "headers": dict}; hooks may mutate json/headers.
+        privacy: Optional PresidioRedactor (or any BeforeRequestHook) appended to hooks.
+        session: Optional shared requests.Session (e.g. for tests).
+        retry: Optional urllib3.Retry for 429/5xx (default respects Retry-After).
         """
         self.api_key = api_key.strip()
         self.base_url = base_url.rstrip("/")
-        self.headers = {"X-Kimss-Key": self.api_key, "Content-Type": "application/json"}
+        self.headers: Dict[str, str] = {
+            "X-Kimss-Key": self.api_key,
+            "Content-Type": "application/json",
+        }
+        self._hooks: List[BeforeRequestHook] = list(before_request_hooks or [])
+        if privacy is not None:
+            self._hooks.append(privacy)
+        self._session = session or requests.Session()
+        adapter = HTTPAdapter(max_retries=retry or _default_retry())
+        self._session.mount("https://", adapter)
+        self._session.mount("http://", adapter)
+
+    def _post_json(self, path: str, json_body: Dict[str, Any], timeout: int) -> requests.Response:
+        ctx: Dict[str, Any] = {
+            "path": path,
+            "json": json_body,
+            "headers": dict(self.headers),
+        }
+        for hook in self._hooks:
+            try:
+                hook(ctx)
+            except Exception:
+                logger.exception("before_request hook failed path=%s", path)
+                raise
+        url = f"{self.base_url}{path}"
+        return self._session.post(
+            url,
+            json=ctx["json"],
+            headers=ctx["headers"],
+            timeout=timeout,
+        )
 
     def get_agent(self, agent_id: str) -> "Agent":
         """Return an Agent handle for the given assistant/agent id."""
@@ -60,9 +124,6 @@ class KimssClient:
     ) -> Dict[str, Any]:
         """
         Add a function tool definition to an agent (owned by the API key user).
-        This registers the function on the agent so the model can call it; the actual
-        implementation must be deployed in your backend and registered (e.g. @register_tool)
-        so the run loop can execute it when the agent requests the tool.
         """
         payload: Dict[str, Any] = {
             "assistant_id": agent_id,
@@ -70,12 +131,7 @@ class KimssClient:
             "description": (description or "").strip(),
             "parameters": _normalize_parameters(parameters),
         }
-        response = requests.post(
-            f"{self.base_url}/agent_add_function/",
-            json=payload,
-            headers=self.headers,
-            timeout=60,
-        )
+        response = self._post_json("/agent_add_function/", payload, timeout=60)
         response.raise_for_status()
         data = response.json()
         return data.get("res", data)
@@ -96,7 +152,6 @@ class Agent:
     ) -> Dict[str, Any]:
         """
         Send a message to this agent and return the API response (res payload).
-        Optionally pass thread_id to continue a conversation.
         """
         payload: Dict[str, Any] = {
             "assistant_id": self.id,
@@ -105,12 +160,7 @@ class Agent:
         }
         if thread_id is not None and str(thread_id).strip():
             payload["thread_id"] = str(thread_id).strip()
-        response = requests.post(
-            f"{self._client.base_url}/assistant_chat/",
-            json=payload,
-            headers=self._client.headers,
-            timeout=120,
-        )
+        response = self._client._post_json("/assistant_chat/", payload, timeout=120)
         response.raise_for_status()
         data = response.json()
         return data.get("res", data)
@@ -121,10 +171,7 @@ class Agent:
         description: Optional[str] = None,
         parameters: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        """
-        Add a function tool definition to this agent. Same as
-        client.add_function_to_agent(self.id, name, description, parameters).
-        """
+        """Add a function tool definition to this agent."""
         return self._client.add_function_to_agent(
             self.id, name, description or "", parameters
         )

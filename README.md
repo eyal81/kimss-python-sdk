@@ -8,6 +8,12 @@ Lightweight client for the [Kimss](https://kimss.ai) API. Use it to call your Ki
 pip install kimss
 ```
 
+Optional **PII redaction** (Microsoft Presidio + spaCy model, e.g. `python -m spacy download en_core_web_lg`):
+
+```bash
+pip install 'kimss[privacy]'
+```
+
 Or from this repo (editable):
 
 ```bash
@@ -47,9 +53,21 @@ result3 = client.chat(assistant_id="asst_xxxx", message="Hi", thread_id=result.g
 
 ## API
 
-- **`KimssClient(api_key, base_url="...")`** – authenticated client. `base_url` must be your real Kimss API (e.g. Azure or APIM URL).
+- **`KimssClient(api_key, base_url="...", before_request_hooks=None, privacy=None, session=None, retry=None)`** – authenticated client. `base_url` must be your real Kimss API (e.g. Azure or APIM URL). Uses a `requests.Session` with **retry on 429 / 5xx** and **Retry-After** by default.
 - **`client.get_agent(agent_id)`** – returns an `Agent` for that assistant.
 - **`agent.query(message, thread_id=None, chat_type="user_chat")`** – send a message; returns the `res` object from `POST /assistant_chat/`.
 - **`client.chat(assistant_id, message, thread_id=None, chat_type="user_chat")`** – one-off chat without an Agent handle.
+- **`before_request_hooks`** – list of callables `hook(ctx)` where `ctx` is `{"path": str, "json": dict, "headers": dict}`; hooks may mutate `json` / `headers` before the HTTP POST.
+- **`privacy`** – shortcut for `PresidioRedactor()` from `kimss.privacy` (requires `kimss[privacy]`).
+
+```python
+from kimss import KimssClient, PresidioRedactor
+
+client = KimssClient(
+    api_key="kimss_...",
+    base_url="https://your-apim.azure-api.net",
+    privacy=PresidioRedactor(),
+)
+```
 
 All requests use the `X-Kimss-Key` header. No streaming in this version; responses are full JSON.
