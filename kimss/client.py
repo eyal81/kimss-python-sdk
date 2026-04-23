@@ -5,7 +5,7 @@ Use X-Kimss-Key for authentication (long-lived API key from your Kimss Developer
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable, Dict, List, MutableMapping, Optional
+from typing import Any, Callable, Dict, Generator, List, MutableMapping, Optional, Union, Iterator
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -77,6 +77,9 @@ class KimssClient:
         adapter = HTTPAdapter(max_retries=retry or _default_retry())
         self._session.mount("https://", adapter)
         self._session.mount("http://", adapter)
+        self.models = ModelsNamespace(self)
+        self.agents = AgentsRunV1(self)
+        self.files = FilesNamespace(self)
 
     def _post_json(self, path: str, json_body: Dict[str, Any], timeout: int) -> requests.Response:
         ctx: Dict[str, Any] = {
@@ -101,6 +104,26 @@ class KimssClient:
     def get_agent(self, agent_id: str) -> "Agent":
         """Return an Agent handle for the given assistant/agent id."""
         return Agent(self, agent_id)
+
+    def _iter_sse_json(self, response: "requests.Response") -> Generator[Dict[str, Any], None, None]:
+        """Parse `data: {...}` lines from a Kimss SSE stream."""
+        import json
+
+        for raw in response.iter_lines(decode_unicode=True):
+            if not raw or not str(raw).strip():
+                continue
+            line = str(raw).strip()
+            if not line.startswith("data:"):
+                continue
+            payload = line[5:].strip()
+            if payload == "[DONE]":
+                break
+            try:
+                obj = json.loads(payload)
+            except Exception:
+                continue
+            if isinstance(obj, dict):
+                yield obj
 
     def chat(
         self,
@@ -175,3 +198,145 @@ class Agent:
         return self._client.add_function_to_agent(
             self.id, name, description or "", parameters
         )
+
+
+class FilesNamespace:
+    """Upload files for /v1/models/completions attachments."""
+
+    def __init__(self, client: KimssClient) -> None:
+        self._client = client
+
+    def upload(
+        self,
+        path: Union[str, bytes],
+        filename: Optional[str] = None,
+        *,
+        content_type: str = "application/octet-stream",
+    ) -> Dict[str, Any]:
+        import os
+
+        if isinstance(path, (bytes, bytearray)):
+            data = bytes(path)
+            fn = filename or "upload"
+        else:
+            fn = filename or os.path.basename(str(path))
+            with open(path, "rb") as f:  # noqa: SIM115
+                data = f.read()
+        url = f"{self._client.base_url}/v1/files/upload"
+        h = {k: v for k, v in self._client.headers.items() if k.lower() != "content-type"}
+        r = self._client._session.post(
+            url,
+            files={"file": (fn, data, content_type)},
+            headers=h,
+            timeout=60,
+        )
+        r.raise_for_status()
+        body = r.json()
+        return body.get("res", body)
+
+
+class ModelsNamespace:
+    """Standard (non-agent) model completions: POST /v1/models/completions."""
+
+    def __init__(self, client: KimssClient) -> None:
+        self._client = client
+
+    def create(
+        self,
+        model: str,
+        messages: List[Dict[str, str]],
+        *,
+        stream: bool = False,
+        system: Optional[str] = None,
+        attachments: Optional[List[Dict[str, str]]] = None,
+        max_tokens: Optional[int] = None,
+        temperature: Optional[float] = None,
+    ) -> Union[Dict[str, Any], Generator[Dict[str, Any], None, None]]:
+        payload: Dict[str, Any] = {
+            "model": model,
+            "messages": messages,
+            "stream": stream,
+        }
+        if system is not None:
+            payload["system"] = system
+        if attachments:
+            payload["attachments"] = attachments
+        if max_tokens is not None:
+            payload["max_tokens"] = max_tokens
+        if temperature is not None:
+            payload["temperature"] = temperature
+        if not stream:
+            r = self._client._post_json("/v1/models/completions", payload, timeout=120)
+            r.raise_for_status()
+            return r.json().get("res", r.json())
+        ctx: Dict[str, Any] = {
+            "path": "/v1/models/completions",
+            "json": payload,
+            "headers": dict(self._client.headers),
+        }
+        for hook in self._client._hooks:
+            try:
+                hook(ctx)
+            except Exception:
+                logger.exception("before_request hook failed path=v1/models/completions")
+                raise
+        url = f"{self._client.base_url}/v1/models/completions"
+        response = self._client._session.post(
+            url, json=ctx["json"], headers=ctx["headers"], stream=True, timeout=300
+        )
+        response.raise_for_status()
+
+        def _gen() -> Generator[Dict[str, Any], None, None]:
+            yield from self._client._iter_sse_json(response)
+
+        return _gen()
+
+
+class AgentsRunV1:
+    """v1 agent orchestration: POST /v1/agents/run (replaces /assistant_chat for new integrations)."""
+
+    def __init__(self, client: KimssClient) -> None:
+        self._client = client
+
+    def run(
+        self,
+        assistant_id: str,
+        message: str,
+        *,
+        stream: bool = False,
+        thread_id: Optional[str] = None,
+        chat_type: str = "user_chat",
+    ) -> Union[Dict[str, Any], Generator[Dict[str, Any], None, None]]:
+        payload: Dict[str, Any] = {
+            "assistant_id": assistant_id,
+            "usr_chat": message,
+            "stream": stream,
+            "chat_type": chat_type,
+        }
+        if thread_id:
+            payload["thread_id"] = str(thread_id).strip()
+        if not stream:
+            r = self._client._post_json("/v1/agents/run", payload, timeout=120)
+            r.raise_for_status()
+            return r.json().get("res", r.json())
+        ctx: Dict[str, Any] = {
+            "path": "/v1/agents/run",
+            "json": payload,
+            "headers": dict(self._client.headers),
+        }
+        for hook in self._client._hooks:
+            try:
+                hook(ctx)
+            except Exception:
+                logger.exception("before_request hook failed path=v1/agents/run")
+                raise
+        url = f"{self._client.base_url}/v1/agents/run"
+        response = self._client._session.post(
+            url, json=ctx["json"], headers=ctx["headers"], stream=True, timeout=300
+        )
+        response.raise_for_status()
+
+        def _gen() -> Generator[Dict[str, Any], None, None]:
+            yield from self._client._iter_sse_json(response)
+
+        return _gen()
