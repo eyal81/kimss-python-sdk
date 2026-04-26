@@ -5,6 +5,7 @@ Use X-Kimss-Key for authentication (long-lived API key from your Kimss Developer
 from __future__ import annotations
 
 import logging
+import os
 from typing import Any, Callable, Dict, Generator, List, MutableMapping, Optional, Union, Iterator
 
 import requests
@@ -47,9 +48,12 @@ class KimssClient:
 
     def __init__(
         self,
-        api_key: str,
+        api_key: Optional[str] = None,
         base_url: str = "https://api.kimss.ai",
         *,
+        credential: Any = None,
+        token_scope: Optional[str] = None,
+        workspace_id: Optional[str] = None,
         before_request_hooks: Optional[List[BeforeRequestHook]] = None,
         privacy: Any = None,
         session: Optional[requests.Session] = None,
@@ -57,6 +61,13 @@ class KimssClient:
     ):
         """
         api_key: From Kimss app → Developer Settings → API Keys.
+        credential: Optional Azure credential with get_token(scope) for headless
+            Entra ID auth. When set, requests use Authorization: Bearer.
+        token_scope: Scope used with credential.get_token(...), e.g.
+            api://<kimss-api-app-id>/.default. Defaults to KIMSS_API_SCOPE
+            or KIMSS_TOKEN_SCOPE when present.
+        workspace_id: Optional tenant/workspace key to stamp onto request
+            headers and JSON bodies as tenant_id.
         base_url: Your actual Kimss API URL (e.g. https://your-app.azurewebsites.net).
         before_request_hooks: Optional callables invoked as hook(ctx) where ctx is
             {"path": str, "json": dict, "headers": dict}; hooks may mutate json/headers.
@@ -64,12 +75,27 @@ class KimssClient:
         session: Optional shared requests.Session (e.g. for tests).
         retry: Optional urllib3.Retry for 429/5xx (default respects Retry-After).
         """
-        self.api_key = api_key.strip()
+        self.api_key = (api_key or "").strip()
+        self._credential = credential
+        self._token_scope = (
+            token_scope
+            or os.getenv("KIMSS_API_SCOPE")
+            or os.getenv("KIMSS_TOKEN_SCOPE")
+            or ""
+        ).strip()
+        self.workspace_id = (workspace_id or os.getenv("KIMSS_WORKSPACE_ID") or "").strip()
+        if not self.api_key and self._credential is None:
+            raise ValueError("KimssClient requires either api_key or credential")
+        if self._credential is not None and not self._token_scope:
+            raise ValueError(
+                "KimssClient credential auth requires token_scope or KIMSS_API_SCOPE"
+            )
         self.base_url = base_url.rstrip("/")
-        self.headers: Dict[str, str] = {
-            "X-Kimss-Key": self.api_key,
-            "Content-Type": "application/json",
-        }
+        self.headers: Dict[str, str] = {"Content-Type": "application/json"}
+        if self.api_key:
+            self.headers["X-Kimss-Key"] = self.api_key
+        if self.workspace_id:
+            self.headers["X-Workspace-ID"] = self.workspace_id
         self._hooks: List[BeforeRequestHook] = list(before_request_hooks or [])
         if privacy is not None:
             self._hooks.append(privacy)
@@ -81,11 +107,24 @@ class KimssClient:
         self.agents = AgentsRunV1(self)
         self.files = FilesNamespace(self)
 
+    def _request_headers(self, *, include_content_type: bool = True) -> Dict[str, str]:
+        headers = dict(self.headers)
+        if not include_content_type:
+            headers = {k: v for k, v in headers.items() if k.lower() != "content-type"}
+        if self._credential is not None:
+            token = self._credential.get_token(self._token_scope)
+            headers["Authorization"] = f"Bearer {token.token}"
+            headers.pop("X-Kimss-Key", None)
+        return headers
+
     def _post_json(self, path: str, json_body: Dict[str, Any], timeout: int) -> requests.Response:
+        body = dict(json_body)
+        if self.workspace_id and not str(body.get("tenant_id") or "").strip():
+            body["tenant_id"] = self.workspace_id
         ctx: Dict[str, Any] = {
             "path": path,
-            "json": json_body,
-            "headers": dict(self.headers),
+            "json": body,
+            "headers": self._request_headers(),
         }
         for hook in self._hooks:
             try:
@@ -223,7 +262,7 @@ class FilesNamespace:
             with open(path, "rb") as f:  # noqa: SIM115
                 data = f.read()
         url = f"{self._client.base_url}/v1/files/upload"
-        h = {k: v for k, v in self._client.headers.items() if k.lower() != "content-type"}
+        h = self._client._request_headers(include_content_type=False)
         r = self._client._session.post(
             url,
             files={"file": (fn, data, content_type)},
@@ -269,10 +308,13 @@ class ModelsNamespace:
             r = self._client._post_json("/v1/models/completions", payload, timeout=120)
             r.raise_for_status()
             return r.json().get("res", r.json())
+        if self._client.workspace_id and not str(payload.get("tenant_id") or "").strip():
+            payload = dict(payload)
+            payload["tenant_id"] = self._client.workspace_id
         ctx: Dict[str, Any] = {
             "path": "/v1/models/completions",
             "json": payload,
-            "headers": dict(self._client.headers),
+            "headers": self._client._request_headers(),
         }
         for hook in self._client._hooks:
             try:
@@ -319,10 +361,13 @@ class AgentsRunV1:
             r = self._client._post_json("/v1/agents/run", payload, timeout=120)
             r.raise_for_status()
             return r.json().get("res", r.json())
+        if self._client.workspace_id and not str(payload.get("tenant_id") or "").strip():
+            payload = dict(payload)
+            payload["tenant_id"] = self._client.workspace_id
         ctx: Dict[str, Any] = {
             "path": "/v1/agents/run",
             "json": payload,
-            "headers": dict(self._client.headers),
+            "headers": self._client._request_headers(),
         }
         for hook in self._client._hooks:
             try:

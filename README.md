@@ -24,6 +24,21 @@ cd kimss_sdk && pip install -e .
 
 Use a **long-lived API key** (not a browser session token). Create keys in your Kimss app under **Developer Settings → API Keys**. The key is scoped to your tenant and user.
 
+Headless workers can also authenticate with Microsoft Entra ID by passing
+an Azure credential plus a Kimss API token scope:
+
+```python
+from azure.identity import DefaultAzureCredential
+from kimss import KimssClient
+
+client = KimssClient(
+    base_url="https://your-apim.azure-api.net",
+    credential=DefaultAzureCredential(),
+    token_scope="api://<kimss-api-app-id>/.default",
+    workspace_id="worksfusion",
+)
+```
+
 ## Usage
 
 Pass your **actual API base URL** (the one your Kimss provider gave you). The default `https://api.kimss.ai` is only a placeholder — set `base_url` or you will get connection errors.
@@ -53,7 +68,7 @@ result3 = client.chat(assistant_id="asst_xxxx", message="Hi", thread_id=result.g
 
 ## API
 
-- **`KimssClient(api_key, base_url="...", before_request_hooks=None, privacy=None, session=None, retry=None)`** – authenticated client. `base_url` must be your real Kimss API (e.g. Azure or APIM URL). Uses a `requests.Session` with **retry on 429 / 5xx** and **Retry-After** by default.
+- **`KimssClient(api_key=None, base_url="...", credential=None, token_scope=None, workspace_id=None, before_request_hooks=None, privacy=None, session=None, retry=None)`** – authenticated client. Provide either `api_key` (uses `X-Kimss-Key`) or `credential` + `token_scope` (uses `Authorization: Bearer`). `workspace_id` optionally stamps `X-Workspace-ID` and `tenant_id` for isolated worker telemetry. `base_url` must be your real Kimss API (e.g. Azure or APIM URL). Uses a `requests.Session` with **retry on 429 / 5xx** and **Retry-After** by default.
 - **`client.get_agent(agent_id)`** – returns an `Agent` for that assistant.
 - **`agent.query(message, thread_id=None, chat_type="user_chat")`** – send a message; returns the `res` object from `POST /assistant_chat/`.
 - **`client.chat(assistant_id, message, thread_id=None, chat_type="user_chat")`** – one-off chat without an Agent handle.
@@ -70,4 +85,5 @@ client = KimssClient(
 )
 ```
 
-All requests use the `X-Kimss-Key` header. No streaming in this version; responses are full JSON.
+API-key requests use the `X-Kimss-Key` header. Credential requests use
+`Authorization: Bearer <token>`. No streaming in this version; responses are full JSON.
