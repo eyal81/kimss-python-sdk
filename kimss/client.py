@@ -68,7 +68,7 @@ class KimssClient:
             or KIMSS_TOKEN_SCOPE when present.
         workspace_id: Optional tenant/workspace key to stamp onto request
             headers and JSON bodies as tenant_id.
-        base_url: Your actual Kimss API URL (e.g. https://your-app.azurewebsites.net).
+        base_url: Kimss API URL. Use https://api.kimss.ai for production.
         before_request_hooks: Optional callables invoked as hook(ctx) where ctx is
             {"path": str, "json": dict, "headers": dict}; hooks may mutate json/headers.
         privacy: Optional PresidioRedactor (or any BeforeRequestHook) appended to hooks.

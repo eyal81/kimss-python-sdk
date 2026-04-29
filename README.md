@@ -32,7 +32,7 @@ from azure.identity import DefaultAzureCredential
 from kimss import KimssClient
 
 client = KimssClient(
-    base_url="https://your-apim.azure-api.net",
+    base_url="https://api.kimss.ai",
     credential=DefaultAzureCredential(),
     token_scope="api://<kimss-api-app-id>/.default",
     workspace_id="worksfusion",
@@ -41,17 +41,14 @@ client = KimssClient(
 
 ## Usage
 
-Pass your **actual API base URL** (the one your Kimss provider gave you). The default `https://api.kimss.ai` is only a placeholder — set `base_url` or you will get connection errors.
-
-- **Prefer the APIM gateway URL** if your provider uses one (e.g. `https://xxx.azure-api.net`): one stable URL for all users.
-- Backend URLs (e.g. `...azurewebsites.net`) are per deployment; not the same for every user.
+Use the canonical Kimss API host. Production is `https://api.kimss.ai` and staging is `https://stg.kimss.ai`; do not include a trailing slash.
 
 ```python
 from kimss import KimssClient, Agent
 
 client = KimssClient(
     api_key="kimss_xxxxxxxxxxxxxxxxxxxxxxxx",  # from Developer Settings
-    base_url="https://your-apim.azure-api.net",  # or the URL your provider gave you (no trailing slash)
+    base_url="https://api.kimss.ai",  # no trailing slash
 )
 
 # Get an agent and send a message
@@ -68,7 +65,7 @@ result3 = client.chat(assistant_id="asst_xxxx", message="Hi", thread_id=result.g
 
 ## API
 
-- **`KimssClient(api_key=None, base_url="...", credential=None, token_scope=None, workspace_id=None, before_request_hooks=None, privacy=None, session=None, retry=None)`** – authenticated client. Provide either `api_key` (uses `X-Kimss-Key`) or `credential` + `token_scope` (uses `Authorization: Bearer`). `workspace_id` optionally stamps `X-Workspace-ID` and `tenant_id` for isolated worker telemetry. `base_url` must be your real Kimss API (e.g. Azure or APIM URL). Uses a `requests.Session` with **retry on 429 / 5xx** and **Retry-After** by default.
+- **`KimssClient(api_key=None, base_url="https://api.kimss.ai", credential=None, token_scope=None, workspace_id=None, before_request_hooks=None, privacy=None, session=None, retry=None)`** – authenticated client. Provide either `api_key` (uses `X-Kimss-Key`) or `credential` + `token_scope` (uses `Authorization: Bearer`). `workspace_id` optionally stamps `X-Workspace-ID` and `tenant_id` for isolated worker telemetry. Uses a `requests.Session` with **retry on 429 / 5xx** and **Retry-After** by default.
 - **`client.get_agent(agent_id)`** – returns an `Agent` for that assistant.
 - **`agent.query(message, thread_id=None, chat_type="user_chat")`** – send a message; returns the `res` object from `POST /assistant_chat/`.
 - **`client.chat(assistant_id, message, thread_id=None, chat_type="user_chat")`** – one-off chat without an Agent handle.
@@ -80,7 +77,7 @@ from kimss import KimssClient, PresidioRedactor
 
 client = KimssClient(
     api_key="kimss_...",
-    base_url="https://your-apim.azure-api.net",
+    base_url="https://api.kimss.ai",
     privacy=PresidioRedactor(),
 )
 ```
