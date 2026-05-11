@@ -84,3 +84,13 @@ client = KimssClient(
 
 API-key requests use the `X-Kimss-Key` header. Credential requests use
 `Authorization: Bearer <token>`. No streaming in this version; responses are full JSON.
+
+## Usage Hub (execution context)
+
+For agent and model calls, the SDK automatically adds an optional **`X-Kimss-SDK-Context`** header (base64url JSON) with:
+
+- **`host_environment`** — e.g. Azure `WEBSITE_SITE_NAME`, `GitHub:org/repo`, or `Local/Dev`
+- **`source_location`** — best-effort path to the caller's Python file (relative to `getcwd()` when possible)
+- **`resource_type`** / **`resource_name`** — `agent` or `model` plus assistant id or model id
+
+Paths are resolved in your process and sent as metadata for the workspace **Usage** dashboard. Use `before_request_hooks` to remove that header from `ctx["headers"]` if your policy forbids file paths.

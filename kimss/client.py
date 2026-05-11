@@ -13,6 +13,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from .privacy import BeforeRequestHook
+from .telemetry.context import encode_sdk_context_header_value
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +25,30 @@ def _normalize_parameters(parameters: Any) -> Dict[str, Any]:
     if isinstance(parameters, dict):
         return parameters
     return dict(parameters)
+
+
+def _sdk_resource_meta(path: str, json_body: Dict[str, Any]) -> Optional[tuple]:
+    """Return (resource_type, resource_name) for Usage Hub context, or None to skip header."""
+    p = (path or "").lower()
+    jb = json_body or {}
+    if "/v1/models/completions" in p:
+        return ("model", str(jb.get("model") or "").strip())
+    if "/v1/agents/run" in p or "/assistant_chat" in p:
+        return ("agent", str(jb.get("assistant_id") or "").strip())
+    if "/agent_add_function" in p:
+        return ("agent", str(jb.get("assistant_id") or "").strip())
+    return None
+
+
+def _attach_sdk_context_header(headers: MutableMapping[str, str], path: str, json_body: Dict[str, Any]) -> None:
+    meta = _sdk_resource_meta(path, json_body)
+    if not meta:
+        return
+    rt, rn = meta
+    try:
+        headers["X-Kimss-SDK-Context"] = encode_sdk_context_header_value(resource_type=rt, resource_name=rn)
+    except Exception:
+        logger.debug("sdk context header skipped path=%s", path, exc_info=True)
 
 
 def _default_retry() -> Retry:
@@ -126,6 +151,7 @@ class KimssClient:
             "json": body,
             "headers": self._request_headers(),
         }
+        _attach_sdk_context_header(ctx["headers"], path, body)
         for hook in self._hooks:
             try:
                 hook(ctx)
@@ -316,6 +342,7 @@ class ModelsNamespace:
             "json": payload,
             "headers": self._client._request_headers(),
         }
+        _attach_sdk_context_header(ctx["headers"], "/v1/models/completions", payload)
         for hook in self._client._hooks:
             try:
                 hook(ctx)
@@ -369,6 +396,7 @@ class AgentsRunV1:
             "json": payload,
             "headers": self._client._request_headers(),
         }
+        _attach_sdk_context_header(ctx["headers"], "/v1/agents/run", payload)
         for hook in self._client._hooks:
             try:
                 hook(ctx)
