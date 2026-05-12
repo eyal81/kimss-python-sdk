@@ -130,6 +130,7 @@ class KimssClient:
         self._session.mount("http://", adapter)
         self.models = ModelsNamespace(self)
         self.agents = AgentsRunV1(self)
+        self.vector_stores = VectorStoresNamespace(self)
         self.files = FilesNamespace(self)
 
     def _request_headers(self, *, include_content_type: bool = True) -> Dict[str, str]:
@@ -265,6 +266,40 @@ class Agent:
         )
 
 
+class VectorStoresNamespace:
+    """v1 vector store management: POST /v1/vector_stores/create.
+
+    Optional ``agent_id`` links the new store to an existing agent
+    (``replace=True`` semantics on the API side).
+    """
+
+    def __init__(self, client: KimssClient) -> None:
+        self._client = client
+
+    def create(
+        self,
+        *,
+        name: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        agent_id: Optional[str] = None,
+        tenant_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Create a vector store and return its ``res`` payload."""
+        payload: Dict[str, Any] = {}
+        if name is not None and str(name).strip():
+            payload["name"] = str(name).strip()
+        if metadata is not None:
+            payload["metadata"] = metadata
+        if agent_id is not None and str(agent_id).strip():
+            payload["agent_id"] = str(agent_id).strip()
+        if tenant_id is not None and str(tenant_id).strip():
+            payload["tenant_id"] = str(tenant_id).strip()
+        r = self._client._post_json("/v1/vector_stores/create", payload, timeout=120)
+        r.raise_for_status()
+        body = r.json()
+        return body.get("res", body)
+
+
 class FilesNamespace:
     """Upload files for /v1/models/completions attachments."""
 
@@ -362,10 +397,49 @@ class ModelsNamespace:
 
 
 class AgentsRunV1:
-    """v1 agent orchestration: POST /v1/agents/run (replaces /assistant_chat for new integrations)."""
+    """v1 agent management + orchestration.
+
+    - ``create`` -> POST /v1/agents/create (management API key scope or Entra
+      Bearer with equivalent privileges). Returns the inner ``res`` payload
+      (e.g. ``{"assistant_id": "...", "agent_name": "..."}``).
+    - ``run``    -> POST /v1/agents/run   (orchestration; replaces /assistant_chat
+      for new integrations).
+    """
 
     def __init__(self, client: KimssClient) -> None:
         self._client = client
+
+    def create(
+        self,
+        *,
+        name: str,
+        model: Optional[str] = None,
+        instructions: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        owner_id: Optional[str] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+        tenant_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Create a Foundry-backed Kimss agent and return its ``res`` payload."""
+        payload: Dict[str, Any] = {"name": (name or "").strip()}
+        if not payload["name"]:
+            raise ValueError("agents.create requires a non-empty name")
+        if model is not None and str(model).strip():
+            payload["model"] = str(model).strip()
+        if instructions is not None:
+            payload["instructions"] = instructions
+        if metadata is not None:
+            payload["metadata"] = metadata
+        if owner_id is not None and str(owner_id).strip():
+            payload["owner_id"] = str(owner_id).strip()
+        if tools is not None:
+            payload["tools"] = tools
+        if tenant_id is not None and str(tenant_id).strip():
+            payload["tenant_id"] = str(tenant_id).strip()
+        r = self._client._post_json("/v1/agents/create", payload, timeout=120)
+        r.raise_for_status()
+        body = r.json()
+        return body.get("res", body)
 
     def run(
         self,
