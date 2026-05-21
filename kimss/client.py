@@ -12,6 +12,7 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
+from .errors import raise_for_kimss_error
 from .privacy import BeforeRequestHook
 from .telemetry.context import encode_sdk_context_header_value
 
@@ -58,7 +59,8 @@ def _default_retry() -> Retry:
         read=3,
         status=3,
         backoff_factor=0.6,
-        status_forcelist=(429, 500, 502, 503, 504),
+        # Do not retry 429: credit exhaustion and rate limits must surface immediately.
+        status_forcelist=(500, 502, 503, 504),
         allowed_methods=frozenset({"POST", "GET"}),
         raise_on_status=False,
         respect_retry_after_header=True,
@@ -98,7 +100,7 @@ class KimssClient:
             {"path": str, "json": dict, "headers": dict}; hooks may mutate json/headers.
         privacy: Optional PresidioRedactor (or any BeforeRequestHook) appended to hooks.
         session: Optional shared requests.Session (e.g. for tests).
-        retry: Optional urllib3.Retry for 429/5xx (default respects Retry-After).
+        retry: Optional urllib3.Retry for 5xx (default respects Retry-After; 429 is not retried).
         """
         self.api_key = (api_key or "").strip()
         self._credential = credential
@@ -221,7 +223,7 @@ class KimssClient:
             "parameters": _normalize_parameters(parameters),
         }
         response = self._post_json("/agent_add_function/", payload, timeout=60)
-        response.raise_for_status()
+        raise_for_kimss_error(response)
         data = response.json()
         return data.get("res", data)
 
@@ -250,7 +252,7 @@ class Agent:
         if thread_id is not None and str(thread_id).strip():
             payload["thread_id"] = str(thread_id).strip()
         response = self._client._post_json("/assistant_chat/", payload, timeout=120)
-        response.raise_for_status()
+        raise_for_kimss_error(response)
         data = response.json()
         return data.get("res", data)
 
@@ -295,7 +297,7 @@ class VectorStoresNamespace:
         if tenant_id is not None and str(tenant_id).strip():
             payload["tenant_id"] = str(tenant_id).strip()
         r = self._client._post_json("/v1/vector_stores/create", payload, timeout=120)
-        r.raise_for_status()
+        raise_for_kimss_error(r)
         body = r.json()
         return body.get("res", body)
 
@@ -330,7 +332,7 @@ class FilesNamespace:
             headers=h,
             timeout=60,
         )
-        r.raise_for_status()
+        raise_for_kimss_error(r)
         body = r.json()
         return body.get("res", body)
 
@@ -367,7 +369,7 @@ class ModelsNamespace:
             payload["temperature"] = temperature
         if not stream:
             r = self._client._post_json("/v1/models/completions", payload, timeout=120)
-            r.raise_for_status()
+            raise_for_kimss_error(r)
             return r.json().get("res", r.json())
         if self._client.workspace_id and not str(payload.get("tenant_id") or "").strip():
             payload = dict(payload)
@@ -388,7 +390,7 @@ class ModelsNamespace:
         response = self._client._session.post(
             url, json=ctx["json"], headers=ctx["headers"], stream=True, timeout=300
         )
-        response.raise_for_status()
+        raise_for_kimss_error(response)
 
         def _gen() -> Generator[Dict[str, Any], None, None]:
             yield from self._client._iter_sse_json(response)
@@ -437,7 +439,7 @@ class AgentsRunV1:
         if tenant_id is not None and str(tenant_id).strip():
             payload["tenant_id"] = str(tenant_id).strip()
         r = self._client._post_json("/v1/agents/create", payload, timeout=120)
-        r.raise_for_status()
+        raise_for_kimss_error(r)
         body = r.json()
         return body.get("res", body)
 
@@ -460,7 +462,7 @@ class AgentsRunV1:
             payload["thread_id"] = str(thread_id).strip()
         if not stream:
             r = self._client._post_json("/v1/agents/run", payload, timeout=120)
-            r.raise_for_status()
+            raise_for_kimss_error(r)
             return r.json().get("res", r.json())
         if self._client.workspace_id and not str(payload.get("tenant_id") or "").strip():
             payload = dict(payload)
@@ -481,7 +483,7 @@ class AgentsRunV1:
         response = self._client._session.post(
             url, json=ctx["json"], headers=ctx["headers"], stream=True, timeout=300
         )
-        response.raise_for_status()
+        raise_for_kimss_error(response)
 
         def _gen() -> Generator[Dict[str, Any], None, None]:
             yield from self._client._iter_sse_json(response)

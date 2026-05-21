@@ -65,7 +65,7 @@ result3 = client.chat(assistant_id="asst_xxxx", message="Hi", thread_id=result.g
 
 ## API
 
-- **`KimssClient(api_key=None, base_url="https://api.kimss.ai", credential=None, token_scope=None, workspace_id=None, before_request_hooks=None, privacy=None, session=None, retry=None)`** – authenticated client. Provide either `api_key` (uses `X-Kimss-Key`) or `credential` + `token_scope` (uses `Authorization: Bearer`). `workspace_id` optionally stamps `X-Workspace-ID` and `tenant_id` for isolated worker telemetry. Uses a `requests.Session` with **retry on 429 / 5xx** and **Retry-After** by default.
+- **`KimssClient(..., retry=None)`** – authenticated client. Provide either `api_key` (uses `X-Kimss-Key`) or `credential` + `token_scope` (uses `Authorization: Bearer`). `workspace_id` optionally stamps `X-Workspace-ID` and `tenant_id` for isolated worker telemetry. Uses a `requests.Session` with **retry on 5xx** (not 429) and **Retry-After** by default so credit exhaustion and rate limits surface immediately as typed errors (`KimssCreditExhausted`, `KimssRateLimited`, `KimssSubscriptionRequired`).
 - **`client.get_agent(agent_id)`** – returns an `Agent` for that assistant.
 - **`agent.query(message, thread_id=None, chat_type="user_chat")`** – send a message; returns the `res` object from `POST /assistant_chat/`.
 - **`client.chat(assistant_id, message, thread_id=None, chat_type="user_chat")`** – one-off chat without an Agent handle.
