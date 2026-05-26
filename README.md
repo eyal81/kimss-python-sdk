@@ -148,4 +148,4 @@ Paths are resolved in your process and sent as metadata for the workspace **Usag
 
 ## Contributing & release
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for tests, mirror workflow, and PyPI trusted publishing.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for tests, mirror workflow, and PyPI trusted publishing. **Operator bookmark (monorepo):** [3-step release routine](../plans/2026-05-26-kimss-sdk-release-routine.md).

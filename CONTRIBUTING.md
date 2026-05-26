@@ -31,6 +31,8 @@ On every push to `main` that touches `kimss_sdk/**`, the workflow runs `git subt
 
 Do not store PyPI passwords in the repo; use OIDC trusted publishing only.
 
-## Version bump
+## Version bump & PyPI tag
 
-Edit `version` in `pyproject.toml`, merge to monorepo `main`, wait for mirror, then tag the **public** repo.
+Full 3-step checklist (monorepo bump → mirror verification → public tag for OIDC publish): **[../plans/2026-05-26-kimss-sdk-release-routine.md](../plans/2026-05-26-kimss-sdk-release-routine.md)**.
+
+Short form: edit `version` in `pyproject.toml`, merge to monorepo `main`, wait for mirror, then tag the **public** repo (`v*.*.*` matching that version).
