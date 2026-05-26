@@ -24,7 +24,7 @@ classifiers = [
 [project.urls]
 Homepage = "https://kimss.ai"
 Documentation = "https://github.com/kimssai/kimss-python-sdk/blob/main/docs/llm-context.md"
-Source = "https://github.com/kimssai/kimss-python-sdk"
+Repository = "https://github.com/kimssai/kimss-python-sdk"
 Issues = "https://github.com/kimssai/kimss-python-sdk/issues"
 Changelog = "https://github.com/kimssai/kimss-python-sdk/releases"
 
