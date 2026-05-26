@@ -19,7 +19,7 @@ The main application monorepo syncs this folder to a **public** `kimss-python-sd
 | Secret | Purpose |
 |--------|---------|
 | `KIMSS_SDK_MIRROR_PAT` | Fine-grained PAT with **Contents: Read and write** on the public mirror repo only |
-| `KIMSS_SDK_MIRROR_REPO` | `owner/repo` (e.g. `kimssai/kimss-python-sdk`) **without** `https://` or `.git` |
+| `KIMSS_SDK_MIRROR_REPO` | `owner/repo` (e.g. `eyal81/kimss-python-sdk`) **without** `https://` or `.git` |
 
 On every push to `main` that touches `kimss_sdk/**`, the workflow runs `git subtree split --prefix=kimss_sdk` and force-pushes to the public repo’s `main`.
 
