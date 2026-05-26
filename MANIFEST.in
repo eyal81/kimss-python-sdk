@@ -1,0 +1,3 @@
+graft docs
+graft examples
+include .llms.txt LICENSE README.md CONTRIBUTING.md

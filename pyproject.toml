@@ -4,26 +4,41 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kimss"
-version = "0.1.0"
-description = "Kimss Python SDK for conversational AI agents"
+version = "1.0.0"
+description = "Kimss Python SDK & MCP server for conversational AI agents"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = "MIT"
 dependencies = [
     "requests>=2.28",
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
+
+[project.urls]
+Homepage = "https://kimss.ai"
+Documentation = "https://github.com/kimssai/kimss-python-sdk/blob/main/docs/llm-context.md"
+Source = "https://github.com/kimssai/kimss-python-sdk"
+Issues = "https://github.com/kimssai/kimss-python-sdk/issues"
+Changelog = "https://github.com/kimssai/kimss-python-sdk/releases"
 
 [project.optional-dependencies]
 dev = [
     "pytest>=7",
+    "responses>=0.25",
+    "ruff>=0.4",
+]
+mcp = [
+    "mcp>=1.0",
+]
+types = [
+    "pydantic>=2",
 ]
 privacy = [
     "presidio-analyzer>=2.2",
@@ -31,6 +46,20 @@ privacy = [
     "spacy>=3.7",
 ]
 
+[project.scripts]
+kimss-mcp-server = "kimss.mcp.server:main"
+
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["kimss*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

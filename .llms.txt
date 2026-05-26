@@ -1,0 +1,7 @@
+# kimss
+Kimss Python SDK and MCP server for Kimss (https://kimss.ai).
+
+- Requires Python 3.10+ (MCP extra aligns with the official `mcp` package).
+- Human README: README.md
+- Dense AI / IDE context: docs/llm-context.md
+- MCP stdio entrypoint: `kimss-mcp-server` (after `pip install 'kimss[mcp]'`)
