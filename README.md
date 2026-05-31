@@ -91,15 +91,19 @@ client = KimssClient(
 )
 
 # Get an agent and send a message
-agent = client.get_agent(agent_id="asst_xxxx")
+agent = client.get_agent("asst_xxxx")
 result = agent.query("Hello")
 # result is the API "res" payload (run_id, thread_id, messages, usage, etc.)
 
 # Continue a thread
 result2 = agent.query("What did I just say?", thread_id=result.get("thread_id"))
 
-# Or use the client directly
-result3 = client.chat(assistant_id="asst_xxxx", message="Hi", thread_id=result.get("thread_id"))
+# One-off legacy chat without an Agent handle
+result3 = client.chat("asst_xxxx", "Hi", thread_id=result.get("thread_id"))
+
+# Or v1 orchestration (preferred): non-stream returns AgentRunResult (.text, .usage.total_credits)
+result_v1 = client.agents.run("asst_xxxx", "Hello", stream=False)
+print(result_v1.text, result_v1.usage.total_credits)
 ```
 
 ### Streaming
@@ -112,7 +116,7 @@ result3 = client.chat(assistant_id="asst_xxxx", message="Hi", thread_id=result.g
 - **`client.get_agent(agent_id)`** – returns an `Agent` for that assistant.
 - **`agent.query(message, thread_id=None, chat_type="user_chat")`** – send a message; returns the `res` object from `POST /assistant_chat/`.
 - **`client.chat(assistant_id, message, thread_id=None, chat_type="user_chat")`** – one-off chat without an Agent handle.
-- **`client.agents.create` / `client.agents.run`** – v1 agent management and orchestration (`/v1/agents/create`, `/v1/agents/run`).
+- **`client.agents.create` / `client.agents.run`** – v1 agent management and orchestration (`/v1/agents/create`, `/v1/agents/run`). **`agents.run`** accepts positionals `(assistant_id, message)`, keyword aliases **`agent_id` / `prompt`**, optional **`tags`** and **`routing_preference`**; **`stream=False`** returns **`AgentRunResult`** (dict subclass with **`.text`**, **`.usage.total_credits`**) when `res` is a dict.
 - **`client.models.create`** – `/v1/models/completions`.
 - **`client.files.upload`** – `/v1/files/upload`.
 - **`client.vector_stores.create`** – `/v1/vector_stores/create`.

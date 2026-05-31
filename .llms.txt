@@ -5,3 +5,4 @@ Kimss Python SDK and MCP server for Kimss (https://kimss.ai).
 - Human README: README.md
 - Dense AI / IDE context: docs/llm-context.md
 - MCP stdio entrypoint: `kimss-mcp-server` (after `pip install 'kimss[mcp]'`)
+- v1 **`KimssClient.agents.run`**: positionals `(assistant_id, message)` or **`agent_id`/`prompt`**; optional **`tags`**, **`routing_preference`**; **`stream=False`** → **`AgentRunResult`** with **`.text`** and **`.usage.total_credits`** when `res` is a dict.

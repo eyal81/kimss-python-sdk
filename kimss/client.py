@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any, Callable, Dict, Generator, List, MutableMapping, Optional, Union, Iterator
+from typing import Any, Callable, Dict, Generator, List, MutableMapping, Optional, Union
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -398,6 +398,58 @@ class ModelsNamespace:
         return _gen()
 
 
+class AgentRunUsage:
+    """Read-only view of usage fields on an agent run ``res`` payload."""
+
+    __slots__ = ("_raw",)
+
+    def __init__(self, raw: Dict[str, Any]) -> None:
+        self._raw = raw
+
+    @property
+    def total_credits(self) -> float:
+        u = self._raw.get("usage")
+        if isinstance(u, dict):
+            tc = u.get("total_credits")
+            if tc is not None:
+                try:
+                    return float(tc)
+                except (TypeError, ValueError):
+                    pass
+        tc = self._raw.get("total_credits")
+        if tc is not None:
+            try:
+                return float(tc)
+            except (TypeError, ValueError):
+                pass
+        return 0.0
+
+
+class AgentRunResult(dict):
+    """``res`` payload from ``POST /v1/agents/run`` with convenience accessors.
+
+    Still a ``dict`` subclass so existing code using ``result["thread_id"]`` or
+    ``print(result)`` keeps working.
+    """
+
+    __slots__ = ()
+
+    @property
+    def text(self) -> str:
+        for key in ("output", "response", "assistant_response"):
+            v = self.get(key)
+            if v is None:
+                continue
+            if isinstance(v, str):
+                return v
+            return str(v)
+        return ""
+
+    @property
+    def usage(self) -> AgentRunUsage:
+        return AgentRunUsage(self)
+
+
 class AgentsRunV1:
     """v1 agent management + orchestration.
 
@@ -445,25 +497,46 @@ class AgentsRunV1:
 
     def run(
         self,
-        assistant_id: str,
-        message: str,
+        assistant_id: Optional[str] = None,
+        message: Optional[str] = None,
         *,
+        agent_id: Optional[str] = None,
+        prompt: Optional[str] = None,
+        tags: Optional[Any] = None,
+        routing_preference: Optional[str] = None,
         stream: bool = False,
         thread_id: Optional[str] = None,
         chat_type: str = "user_chat",
-    ) -> Union[Dict[str, Any], Generator[Dict[str, Any], None, None]]:
+    ) -> Union[AgentRunResult, Dict[str, Any], Generator[Dict[str, Any], None, None]]:
+        aid = str(assistant_id or "").strip() or str(agent_id or "").strip()
+        msg_src = message if message is not None else prompt
+        usr_chat = "" if msg_src is None else str(msg_src)
+        if not aid:
+            raise ValueError("agents.run requires assistant_id or agent_id")
+        if not usr_chat.strip():
+            raise ValueError("agents.run requires message or prompt")
+
         payload: Dict[str, Any] = {
-            "assistant_id": assistant_id,
-            "usr_chat": message,
+            "assistant_id": aid,
+            "usr_chat": usr_chat,
             "stream": stream,
             "chat_type": chat_type,
         }
         if thread_id:
             payload["thread_id"] = str(thread_id).strip()
+        if tags:
+            payload["tags"] = tags
+        rp = str(routing_preference or "").strip()
+        if rp:
+            payload["routing_preference"] = rp
+
         if not stream:
             r = self._client._post_json("/v1/agents/run", payload, timeout=120)
             raise_for_kimss_error(r)
-            return r.json().get("res", r.json())
+            raw = r.json().get("res", r.json())
+            if isinstance(raw, dict):
+                return AgentRunResult(raw)
+            return raw
         if self._client.workspace_id and not str(payload.get("tenant_id") or "").strip():
             payload = dict(payload)
             payload["tenant_id"] = self._client.workspace_id
