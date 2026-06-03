@@ -197,14 +197,20 @@ class KimssClient:
         self,
         assistant_id: str,
         message: str,
-        thread_id: Optional[str] = None,
+        conversation_id: Optional[str] = None,
         chat_type: str = "user_chat",
     ) -> Dict[str, Any]:
         """
         Send a message to an assistant and return the response.
-        Same as get_agent(assistant_id).query(message, thread_id).
+        Same as get_agent(assistant_id).query(message, conversation_id=...).
+
+        The Kimss HTTP API still uses the JSON field ``thread_id`` for the
+        Foundry **conversation** id; the SDK maps ``conversation_id`` to that
+        field for clarity (v2+).
         """
-        return self.get_agent(assistant_id).query(message, thread_id=thread_id, chat_type=chat_type)
+        return self.get_agent(assistant_id).query(
+            message, conversation_id=conversation_id, chat_type=chat_type
+        )
 
     def add_function_to_agent(
         self,
@@ -238,19 +244,22 @@ class Agent:
     def query(
         self,
         message: str,
-        thread_id: Optional[str] = None,
+        conversation_id: Optional[str] = None,
         chat_type: str = "user_chat",
     ) -> Dict[str, Any]:
         """
         Send a message to this agent and return the API response (res payload).
+
+        ``conversation_id`` continues the same Foundry conversation as the
+        previous turn (Kimss JSON field ``thread_id`` on the wire).
         """
         payload: Dict[str, Any] = {
             "assistant_id": self.id,
             "usr_chat": message,
             "chat_type": chat_type,
         }
-        if thread_id is not None and str(thread_id).strip():
-            payload["thread_id"] = str(thread_id).strip()
+        if conversation_id is not None and str(conversation_id).strip():
+            payload["thread_id"] = str(conversation_id).strip()
         response = self._client._post_json("/assistant_chat/", payload, timeout=120)
         raise_for_kimss_error(response)
         data = response.json()
@@ -428,11 +437,20 @@ class AgentRunUsage:
 class AgentRunResult(dict):
     """``res`` payload from ``POST /v1/agents/run`` with convenience accessors.
 
-    Still a ``dict`` subclass so existing code using ``result["thread_id"]`` or
-    ``print(result)`` keeps working.
+    The response dict may still contain a ``thread_id`` key (Kimss wire name for
+    the Foundry **conversation** id). Prefer :attr:`conversation_id` in new code.
     """
 
     __slots__ = ()
+
+    @property
+    def conversation_id(self) -> Optional[str]:
+        """Foundry conversation id for the next turn (from ``thread_id`` or ``conversation_id`` in ``res``)."""
+        for key in ("conversation_id", "thread_id"):
+            v = self.get(key)
+            if v is not None and str(v).strip():
+                return str(v).strip()
+        return None
 
     @property
     def text(self) -> str:
@@ -505,7 +523,7 @@ class AgentsRunV1:
         tags: Optional[Any] = None,
         routing_preference: Optional[str] = None,
         stream: bool = False,
-        thread_id: Optional[str] = None,
+        conversation_id: Optional[str] = None,
         chat_type: str = "user_chat",
     ) -> Union[AgentRunResult, Dict[str, Any], Generator[Dict[str, Any], None, None]]:
         aid = str(assistant_id or "").strip() or str(agent_id or "").strip()
@@ -522,8 +540,8 @@ class AgentsRunV1:
             "stream": stream,
             "chat_type": chat_type,
         }
-        if thread_id:
-            payload["thread_id"] = str(thread_id).strip()
+        if conversation_id:
+            payload["thread_id"] = str(conversation_id).strip()
         if tags:
             payload["tags"] = tags
         rp = str(routing_preference or "").strip()

@@ -18,7 +18,10 @@ TOOL_INPUT_SCHEMAS: dict[str, dict[str, Any]] = {
         "properties": {
             "assistant_id": {"type": "string", "description": "Kimss assistant / agent id"},
             "message": {"type": "string"},
-            "thread_id": {"type": "string", "description": "Optional thread to continue"},
+            "conversation_id": {
+                "type": "string",
+                "description": "Optional Foundry conversation id (Kimss JSON field thread_id)",
+            },
         },
         "required": ["assistant_id", "message"],
         "additionalProperties": False,
@@ -42,7 +45,10 @@ TOOL_INPUT_SCHEMAS: dict[str, dict[str, Any]] = {
         "properties": {
             "assistant_id": {"type": "string"},
             "message": {"type": "string"},
-            "thread_id": {"type": "string"},
+            "conversation_id": {
+                "type": "string",
+                "description": "Optional Foundry conversation id (Kimss JSON field thread_id)",
+            },
             "chat_type": {"type": "string", "default": "user_chat"},
         },
         "required": ["assistant_id", "message"],
@@ -118,9 +124,9 @@ def kimss_chat(
     client: KimssClient,
     assistant_id: str,
     message: str,
-    thread_id: str | None = None,
+    conversation_id: str | None = None,
 ) -> Any:
-    return client.chat(assistant_id, message, thread_id=thread_id)
+    return client.chat(assistant_id, message, conversation_id=conversation_id)
 
 
 def kimss_create_agent(
@@ -148,14 +154,14 @@ def kimss_run_agent(
     client: KimssClient,
     assistant_id: str,
     message: str,
-    thread_id: str | None = None,
+    conversation_id: str | None = None,
     chat_type: str = "user_chat",
 ) -> Any:
     return client.agents.run(
         assistant_id,
         message,
         stream=False,
-        thread_id=thread_id,
+        conversation_id=conversation_id,
         chat_type=chat_type,
     )
 

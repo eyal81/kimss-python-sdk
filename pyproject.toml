@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kimss"
-version = "1.1.0"
+version = "2.0.0"
 description = "Kimss Python SDK & MCP server for conversational AI agents"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -26,7 +26,7 @@ Homepage = "https://kimss.ai"
 Documentation = "https://github.com/eyal81/kimss-python-sdk/blob/main/docs/llm-context.md"
 Repository = "https://github.com/eyal81/kimss-python-sdk"
 Issues = "https://github.com/eyal81/kimss-python-sdk/issues"
-Changelog = "https://github.com/eyal81/kimss-python-sdk/releases"
+Changelog = "https://github.com/eyal81/kimss-python-sdk/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [

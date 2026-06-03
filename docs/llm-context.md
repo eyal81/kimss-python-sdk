@@ -34,21 +34,21 @@ Override with `KimssClient(..., base_url=...)` or `KIMSS_BASE_URL` for MCP.
 
 | SDK surface | HTTP | Notes |
 |-------------|------|-------|
-| `KimssClient.chat` / `Agent.query` | `POST /assistant_chat/` | Legacy chat; body: `assistant_id`, `usr_chat`, `chat_type`, optional `thread_id` |
+| `KimssClient.chat` / `Agent.query` | `POST /assistant_chat/` | Body: `assistant_id`, `usr_chat`, `chat_type`; optional **`thread_id`** (Foundry **conversation** id). SDK kwarg: **`conversation_id`**. |
 | `KimssClient.add_function_to_agent` / `Agent.add_function` | `POST /agent_add_function/` | `assistant_id`, `name`, `description`, `parameters` (JSON Schema object) |
 | `KimssClient.agents.create` | `POST /v1/agents/create` | Management; requires privileged key |
-| `KimssClient.agents.run(..., stream=False)` | `POST /v1/agents/run` | Non-streaming agent run; returns **`AgentRunResult`** (dict + **`.text`**, **`.usage.total_credits`**) when `res` is a dict. Use **`agent_id`/`prompt`** as aliases; optional **`tags`**, **`routing_preference`** in JSON when set |
+| `KimssClient.agents.run(..., stream=False)` | `POST /v1/agents/run` | Non-streaming agent run; returns **`AgentRunResult`** (dict + **`.text`**, **`.usage.total_credits`**, **`.conversation_id`**) when `res` is a dict. Aliases **`agent_id`/`prompt`**; optional **`conversation_id`** (JSON `thread_id`), **`tags`**, **`routing_preference`** |
 | `KimssClient.models.create(..., stream=False)` | `POST /v1/models/completions` | Non-streaming completions |
 | `KimssClient.files.upload` | `POST /v1/files/upload` | Multipart `file` |
 | `KimssClient.vector_stores.create` | `POST /v1/vector_stores/create` | Optional `agent_id` links store to agent |
 
 Streaming (`stream=True`) returns an SSE iterator; **MCP tools in v1 are non-streaming only**.
 
-## Agent / thread state machine
+## Agent / conversation state machine
 
-1. **First message**: call `chat` or `agents.run("asst_id", "hello", stream=False)` with `assistant_id` only (no `thread_id`).
-2. **Response** includes `thread_id` in the `res` payload (shape may vary; read from returned dict).
-3. **Follow-up**: pass the same `thread_id` on the next call to continue the conversation.
+1. **First message**: call `agents.run("asst_id", "hello", stream=False)` (or `chat` / `query`) with **no** `conversation_id`.
+2. **Response** includes the Foundry conversation id in `res`, typically under **`thread_id`** until the API is renamed; the SDK exposes it as **`AgentRunResult.conversation_id`** for `/v1/agents/run`.
+3. **Follow-up**: pass the same id as **`conversation_id`** on the next SDK call (serialized as JSON **`thread_id`**).
 4. **Attachments / knowledge**: upload via `files.upload`, attach via vector store `create(..., agent_id=...)` per your workspace workflow.
 
 ## Error code dictionary (typed SDK exceptions)

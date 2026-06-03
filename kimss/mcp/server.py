@@ -51,14 +51,14 @@ def build_mcp() -> Any:
     def kimss_chat(
         assistant_id: str,
         message: str,
-        thread_id: str | None = None,
+        conversation_id: str | None = None,
     ) -> Any:
         """Send a user message (POST /assistant_chat/). Returns API ``res`` payload."""
         return _run_tool(
             mcp_tools.kimss_chat,
             assistant_id=assistant_id,
             message=message,
-            thread_id=thread_id,
+            conversation_id=conversation_id,
         )
 
     @mcp.tool()
@@ -87,7 +87,7 @@ def build_mcp() -> Any:
     def kimss_run_agent(
         assistant_id: str,
         message: str,
-        thread_id: str | None = None,
+        conversation_id: str | None = None,
         chat_type: str = "user_chat",
     ) -> Any:
         """Run an agent turn (POST /v1/agents/run), non-streaming only."""
@@ -95,7 +95,7 @@ def build_mcp() -> Any:
             mcp_tools.kimss_run_agent,
             assistant_id=assistant_id,
             message=message,
-            thread_id=thread_id,
+            conversation_id=conversation_id,
             chat_type=chat_type,
         )
 

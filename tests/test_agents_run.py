@@ -26,6 +26,7 @@ def test_run_positional_returns_agent_run_result_with_text_and_usage() -> None:
     client = KimssClient(api_key="k", base_url="https://api.kimss.ai", session=None)
     result = client.agents.run("asst_x", "hi", stream=False)
     assert isinstance(result, AgentRunResult)
+    assert result.conversation_id == "t1"
     assert result["thread_id"] == "t1"
     assert result.text == "hello"
     assert result.usage.total_credits == 1.5
@@ -97,3 +98,19 @@ def test_run_requires_message_or_prompt() -> None:
     client = KimssClient(api_key="k", base_url="https://api.kimss.ai", session=None)
     with pytest.raises(ValueError, match="message or prompt"):
         client.agents.run("asst_x", "", stream=False)
+
+
+@responses.activate
+def test_run_conversation_id_maps_to_thread_id_json() -> None:
+    responses.add(
+        responses.POST,
+        "https://api.kimss.ai/v1/agents/run",
+        json={"res": {"output": "ok"}},
+        status=200,
+    )
+    client = KimssClient(api_key="k", base_url="https://api.kimss.ai", session=None)
+    client.agents.run("asst_c", "m", stream=False, conversation_id=" conv-1 ")
+    rb = responses.calls[0].request.body
+    assert rb is not None
+    payload = json.loads(rb if isinstance(rb, str) else rb.decode())
+    assert payload["thread_id"] == "conv-1"
