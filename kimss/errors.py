@@ -45,6 +45,18 @@ def _detail_dict(response: requests.Response) -> Optional[Dict[str, Any]]:
     d = data.get("detail")
     if isinstance(d, dict):
         return d
+    details = data.get("details")
+    if isinstance(details, dict):
+        nested = details.get("detail")
+        if isinstance(nested, dict):
+            return nested
+    if isinstance(data.get("code"), str):
+        out: Dict[str, Any] = {"error": data.get("code")}
+        if isinstance(data.get("message"), str):
+            out["message"] = data.get("message")
+        if isinstance(details, dict):
+            out["details"] = details
+        return out
     return None
 
 
@@ -63,7 +75,7 @@ def raise_for_kimss_error(response: requests.Response) -> None:
         if err in ("credit_pool_exhausted", "individual_free_trial_exhausted", "credit_policy_blocked"):
             msg = str((detail or {}).get("message") or err or "credit exhausted")
             raise KimssCreditExhausted(msg, response=response, error_code=err or None, detail=detail)
-        if err == "rate_limit_exceeded":
+        if err in ("rate_limit_exceeded", "rate_limited"):
             msg = str((detail or {}).get("message") or "rate_limit_exceeded")
             raise KimssRateLimited(msg, response=response, error_code=err, detail=detail)
 
