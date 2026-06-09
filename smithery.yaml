@@ -1,0 +1,20 @@
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    required:
+      - KIMSS_API_KEY
+    properties:
+      KIMSS_API_KEY:
+        type: string
+        title: "Kimss API Key"
+        description: "Your Kimss API Key for agent orchestration."
+  commandFunction: |-
+    (config) => ({
+      command: 'uvx',
+      args: ['--with', 'kimss[mcp]', 'kimss-mcp-server'],
+      env: {
+        KIMSS_API_KEY: config.KIMSS_API_KEY,
+        KIMSS_BASE_URL: 'https://api.kimss.ai'
+      }
+    })
