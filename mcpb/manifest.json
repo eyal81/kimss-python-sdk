@@ -1,0 +1,46 @@
+{
+  "manifest_version": "0.3",
+  "name": "kimss",
+  "display_name": "Kimss",
+  "version": "2.0.0",
+  "description": "Kimss MCP server for conversational AI agent orchestration.",
+  "long_description": "The Kimss MCP server exposes the Kimss Python SDK as Model Context Protocol tools, enabling clients to create and run conversational AI agents, manage models, and attach files. The server is fetched and run on demand via uvx from PyPI.",
+  "author": {
+    "name": "Kimss",
+    "url": "https://kimss.ai"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eyal81/kimss-python-sdk.git"
+  },
+  "homepage": "https://kimss.ai",
+  "documentation": "https://github.com/eyal81/kimss-python-sdk/blob/main/docs/llm-context.md",
+  "support": "https://github.com/eyal81/kimss-python-sdk/issues",
+  "license": "MIT",
+  "keywords": ["kimss", "mcp", "agents", "ai", "orchestration"],
+  "server": {
+    "type": "binary",
+    "entry_point": "uvx",
+    "mcp_config": {
+      "command": "uvx",
+      "args": ["--from", "kimss[mcp]", "kimss-mcp-server"],
+      "env": {
+        "KIMSS_API_KEY": "${user_config.api_key}",
+        "KIMSS_BASE_URL": "https://api.kimss.ai"
+      }
+    }
+  },
+  "tools_generated": true,
+  "user_config": {
+    "api_key": {
+      "type": "string",
+      "title": "Kimss API Key",
+      "description": "Your Kimss API Key for agent orchestration.",
+      "sensitive": true,
+      "required": true
+    }
+  },
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"]
+  }
+}

@@ -12,7 +12,7 @@ startCommand:
   commandFunction: |-
     (config) => ({
       command: 'uvx',
-      args: ['--with', 'kimss[mcp]', 'kimss-mcp-server'],
+      args: ['--from', 'kimss[mcp]', 'kimss-mcp-server'],
       env: {
         KIMSS_API_KEY: config.KIMSS_API_KEY,
         KIMSS_BASE_URL: 'https://api.kimss.ai'

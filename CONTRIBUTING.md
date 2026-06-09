@@ -27,7 +27,7 @@ On every push to `main` that touches `kimss_sdk/**`, the workflow runs `git subt
 
 1. On [pypi.org](https://pypi.org), open the **kimss** project → **Publishing** → add a **trusted publisher** pointing at the **public** GitHub repo and the `Publish to PyPI` workflow file (see `.github/workflows/publish.yml` in this package).
 2. In the public repo, create a **GitHub Release** from tag `v1.0.0` (or push tag `v1.0.0`) so `publish.yml` runs.
-3. Verify: `pip install -U kimss` and `uvx --with 'kimss[mcp]' kimss-mcp-server` with `KIMSS_API_KEY` set in the IDE MCP config.
+3. Verify: `pip install -U kimss` and `uvx --from 'kimss[mcp]' kimss-mcp-server` with `KIMSS_API_KEY` set in the IDE MCP config.
 
 Do not store PyPI passwords in the repo; use OIDC trusted publishing only.
 

@@ -16,7 +16,7 @@ Install the MCP extra on the fly and expose tools to your IDE:
   "mcpServers": {
     "kimss": {
       "command": "uvx",
-      "args": ["--with", "kimss[mcp]", "kimss-mcp-server"],
+      "args": ["--from", "kimss[mcp]", "kimss-mcp-server"],
       "env": {
         "KIMSS_API_KEY": "your_key_here",
         "KIMSS_BASE_URL": "https://api.kimss.ai",
@@ -32,6 +32,35 @@ Install the MCP extra on the fly and expose tools to your IDE:
 - MCP tools are **non-streaming** in v1 (`kimss_chat`, `kimss_create_agent`, `kimss_run_agent`, `kimss_complete`, `kimss_upload_file`, `kimss_create_vector_store`, `kimss_add_function_to_agent`).
 
 Alternatively, after `pip install 'kimss[mcp]'`, use `"command": "kimss-mcp-server"` on your PATH with the same `env`.
+
+## Windsurf Integration
+
+To use Kimss natively inside Codeium Windsurf as an MCP toolset, add the configuration to your local Windsurf settings:
+
+1. Open your global Windsurf MCP configuration file:
+   - **macOS/Linux:** `~/.codeium/windsurf/mcp_config.json`
+   - **Windows:** `%USERPROFILE%\.codeium\windsurf\mcp_config.json`
+
+2. Append the `kimss` config block to the `mcpServers` object:
+
+```json
+{
+  "mcpServers": {
+    "kimss": {
+      "command": "uvx",
+      "args": ["--from", "kimss[mcp]", "kimss-mcp-server"],
+      "env": {
+        "KIMSS_API_KEY": "your_api_key_here",
+        "KIMSS_BASE_URL": "https://api.kimss.ai"
+      }
+    }
+  }
+}
+```
+
+3. Reload Windsurf. The `kimss` tools appear under the MCP toolset once the server starts.
+
+> Note: use `uvx --from kimss[mcp] kimss-mcp-server` (not `--with`). `--from` tells `uvx` to install the `kimss` package and run its `kimss-mcp-server` console script; `--with` would make `uvx` look for a (nonexistent) PyPI package literally named `kimss-mcp-server`.
 
 ## Install (library)
 

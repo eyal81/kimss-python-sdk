@@ -4,7 +4,7 @@
     "kimss": {
       "command": "uvx",
       "args": [
-        "--with",
+        "--from",
         "kimss[mcp]",
         "kimss-mcp-server"
       ],
