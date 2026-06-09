@@ -1,0 +1,17 @@
+{
+  "name": "kimss",
+  "version": "1.0.0",
+  "displayName": "Kimss Agent Orchestration",
+  "description": "Secure enterprise AI platform for orchestrating and managing agents.",
+  "author": "Kimss Inc.",
+  "homepage": "https://github.com/eyal81/kimss-python-sdk",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eyal81/kimss-python-sdk.git"
+  },
+  "keywords": ["mcp", "agent-orchestration", "enterprise-ai", "azure-ai-foundry"],
+  "categories": ["Developer Tools", "AI"],
+  "components": {
+    "mcp": ".mcp.json"
+  }
+}
