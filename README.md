@@ -7,6 +7,22 @@ Lightweight client for the [Kimss](https://kimss.ai) API — call agents, run mo
 
 **AI assistants:** read [docs/llm-context.md](docs/llm-context.md) or the repo root [.llms.txt](.llms.txt) for dense integration context.
 
+## Cursor Marketplace plugin
+
+This repository includes a **Cursor plugin** layout for [Cursor Marketplace](https://cursor.com/marketplace/publish) submission alongside the PyPI package:
+
+| Path | Purpose |
+|------|---------|
+| [`.cursor-plugin/plugin.json`](.cursor-plugin/plugin.json) | Plugin manifest (`name`, `version`, `author`, `logo`, …) |
+| [`mcp.json`](mcp.json) | MCP server template (`uvx` → `kimss-mcp-server`) |
+| [`rules/kimss-product.mdc`](rules/kimss-product.mdc) | Product and API conventions for assistants |
+| [`skills/kimss-sdk/SKILL.md`](skills/kimss-sdk/SKILL.md) | Python SDK integration skill |
+| [`skills/kimss-mcp-setup/SKILL.md`](skills/kimss-mcp-setup/SKILL.md) | MCP wiring and troubleshooting skill |
+| [`commands/`](commands/) | Slash commands: `kimss-setup`, `kimss-create-agent`, `kimss-diagnose` |
+| [`assets/logo.svg`](assets/logo.svg) | **1:1** marketplace logo (Kimss wordmark on a plate, from product art); [`assets/logo.png`](assets/logo.png) is a **512×512** PNG fallback (regenerate from the SVG in your design pipeline if you need a pixel-perfect raster) |
+
+Legacy Open Plugins metadata remains under [`.plugin/plugin.json`](.plugin/plugin.json) and [`mcpb/manifest.json`](mcpb/manifest.json). The root [`.mcp.json`](.mcp.json) matches `mcp.json` for environments that read dot-prefixed MCP config.
+
 ## Cursor & Windsurf (MCP) — zero local venv with `uvx`
 
 Install the MCP extra on the fly and expose tools to your IDE:
@@ -82,10 +98,10 @@ pip install 'kimss[types]' # Pydantic (reserved for future typed models)
 pip install 'kimss[dev]'    # pytest, responses, ruff
 ```
 
-Editable from a checkout of this package root:
+Editable from a checkout of this repository root:
 
 ```bash
-cd kimss_sdk && pip install -e ".[dev,mcp]"
+pip install -e ".[dev,mcp]"
 ```
 
 ## Authentication
@@ -103,7 +119,7 @@ client = KimssClient(
     base_url="https://api.kimss.ai",
     credential=DefaultAzureCredential(),
     token_scope="api://<kimss-api-app-id>/.default",
-    workspace_id="worksfusion",
+    workspace_id="<your-workspace-slug>",
 )
 ```
 

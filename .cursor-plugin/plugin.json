@@ -1,0 +1,20 @@
+{
+  "name": "kimss",
+  "displayName": "Kimss Agent Orchestration",
+  "version": "2.0.0",
+  "description": "Secure enterprise platform for management and implementation of AI agents — Kimss Python SDK, MCP server, and integration guidance for Cursor.",
+  "author": {
+    "name": "Kimss Inc.",
+    "email": "support@kimss.ai"
+  },
+  "license": "MIT",
+  "keywords": [
+    "kimss",
+    "mcp",
+    "agents",
+    "enterprise-ai",
+    "orchestration",
+    "azure-ai-foundry"
+  ],
+  "logo": "assets/logo.svg"
+}

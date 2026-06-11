@@ -1,0 +1,42 @@
+---
+description: Kimss product and API conventions when integrating agents, MCP, or the Python SDK in Cursor.
+alwaysApply: false
+---
+
+# Kimss — product integration (public)
+
+## What Kimss is
+
+Kimss is a secured enterprise platform for **management and implementation** of conversational AI agents (orchestration, workspaces, usage, and governance). Integrations should treat Kimss as the product surface, not only the MCP transport.
+
+## Canonical hosts
+
+- Production API: `https://api.kimss.ai` (no trailing slash)
+- Staging: `https://stg.kimss.ai`
+
+Do **not** document or recommend raw cloud provider URLs (e.g. `*.azurewebsites.net`) as customer base URLs — use the canonical API host only.
+
+## Authentication
+
+- **API key (default for SDK and MCP):** HTTP header `X-Kimss-Key`. Environment variable for MCP: `KIMSS_API_KEY`. Never commit keys; never log key values.
+- **Microsoft Entra ID (headless):** `Authorization: Bearer` from `credential.get_token(scope)`; scope is typically `api://<kimss-api-app-id>/.default` (see SDK docs). Optional env: `KIMSS_TOKEN_SCOPE` / `KIMSS_API_SCOPE`.
+- **Workspace scoping:** optional `KIMSS_WORKSPACE_ID` → `X-Workspace-ID` and `tenant_id` in JSON when applicable.
+
+## API and SDK conventions
+
+- Prefer **`POST /v1/agents/run`** for new agent turns (non-streaming in MCP v1).
+- Legacy chat: `POST /assistant_chat/` (still supported by SDK `chat` / `Agent.query`).
+- Many JSON responses wrap payloads in **`{"res": ...}`**.
+- **Conversation id:** wire field **`thread_id`** corresponds to SDK **`conversation_id`** on `agents.run` / results.
+- **Agent lifecycle:** `POST /v1/agents/create` requires an API key with **management** scope where policy applies.
+- **Ownership:** only **owned** (personal) agents should be updated or given function tools; shared agents return **403** — do not assume mutability.
+- **Typed errors (SDK):** `KimssCreditExhausted`, `KimssRateLimited`, `KimssSubscriptionRequired` — surface to users; avoid tight retry loops on credit/subscription failures.
+
+## Dense context for assistants
+
+- [docs/llm-context.md](docs/llm-context.md) and repo root [.llms.txt](.llms.txt) — SDK ↔ HTTP map, MCP tool list, error dictionary.
+
+## MCP server (stdio)
+
+- Package: `pip install 'kimss[mcp]'` or run via `uvx --from kimss[mcp] kimss-mcp-server`.
+- Tools are **non-streaming** in v1. See `kimss/mcp/tools.py` for argument schemas.
