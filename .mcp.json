@@ -1,0 +1,17 @@
+{
+  "$schema": "https://open-plugins.com/schema/mcp.json",
+  "mcpServers": {
+    "kimss": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "kimss[mcp]",
+        "kimss-mcp-server"
+      ],
+      "env": {
+        "KIMSS_API_KEY": "",
+        "KIMSS_BASE_URL": "https://api.kimss.ai"
+      }
+    }
+  }
+}

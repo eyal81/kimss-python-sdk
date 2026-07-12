@@ -1,6 +1,6 @@
 # Kimss Python SDK — LLM / IDE context
 
-This file is optimized for AI assistants (Cursor, Windsurf, Copilot). Pair with the human-oriented [README.md](../README.md).
+This file is optimized for AI assistants (Cursor, Windsurf, Claude Desktop, Copilot). Pair with the human-oriented [README.md](../README.md).
 
 ## Authentication
 
@@ -69,6 +69,8 @@ The HTTP client **retries 5xx** with urllib3 `Retry` (not 429).
 ## MCP tools (stdio)
 
 Install: `pip install 'kimss[mcp]'`. Run: `kimss-mcp-server` with `KIMSS_API_KEY` set.
+
+**Clients:** Cursor / Windsurf (`mcpServers` JSON), Claude Desktop (`claude_desktop_config.json` via **Settings → Developer → Edit Config**). Preferred zero-venv launch: `uvx --from kimss[mcp] kimss-mcp-server` (not `--with`).
 
 | Tool | Purpose |
 |------|---------|

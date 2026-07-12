@@ -3,9 +3,25 @@
 [![PyPI](https://img.shields.io/pypi/v/kimss.svg)](https://pypi.org/project/kimss/)
 [![Python](https://img.shields.io/pypi/pyversions/kimss.svg)](https://pypi.org/project/kimss/)
 
-Lightweight client for the [Kimss](https://kimss.ai) API — call agents, run model completions, upload files, and manage vector stores from Python. Optional **Model Context Protocol (MCP)** server for **Cursor**, **Windsurf**, and other MCP-capable IDEs.
+Lightweight client for the [Kimss](https://kimss.ai) API — call agents, run model completions, upload files, and manage vector stores from Python. Optional **Model Context Protocol (MCP)** server for **Cursor**, **Windsurf**, **Claude Desktop**, and other MCP-capable clients.
 
 **AI assistants:** read [docs/llm-context.md](docs/llm-context.md) or the repo root [.llms.txt](.llms.txt) for dense integration context.
+
+## Cursor Marketplace plugin
+
+This repository includes a **Cursor plugin** layout for [Cursor Marketplace](https://cursor.com/marketplace/publish) submission alongside the PyPI package:
+
+| Path | Purpose |
+|------|---------|
+| [`.cursor-plugin/plugin.json`](.cursor-plugin/plugin.json) | Plugin manifest (`name`, `version`, `author`, `logo`, …) |
+| [`mcp.json`](mcp.json) | MCP server template (`uvx` → `kimss-mcp-server`) |
+| [`rules/kimss-product.mdc`](rules/kimss-product.mdc) | Product and API conventions for assistants |
+| [`skills/kimss-sdk/SKILL.md`](skills/kimss-sdk/SKILL.md) | Python SDK integration skill |
+| [`skills/kimss-mcp-setup/SKILL.md`](skills/kimss-mcp-setup/SKILL.md) | MCP wiring and troubleshooting skill |
+| [`commands/`](commands/) | Slash commands: `kimss-setup`, `kimss-create-agent`, `kimss-diagnose` |
+| [`assets/logo.svg`](assets/logo.svg) | **1:1** marketplace logo (Kimss wordmark on a plate, from product art); [`assets/logo.png`](assets/logo.png) is a **512×512** PNG fallback (regenerate from the SVG in your design pipeline if you need a pixel-perfect raster) |
+
+Legacy Open Plugins metadata remains under [`.plugin/plugin.json`](.plugin/plugin.json) and [`mcpb/manifest.json`](mcpb/manifest.json). The root [`.mcp.json`](.mcp.json) matches `mcp.json` for environments that read dot-prefixed MCP config.
 
 ## Cursor & Windsurf (MCP) — zero local venv with `uvx`
 
@@ -16,7 +32,7 @@ Install the MCP extra on the fly and expose tools to your IDE:
   "mcpServers": {
     "kimss": {
       "command": "uvx",
-      "args": ["--with", "kimss[mcp]", "kimss-mcp-server"],
+      "args": ["--from", "kimss[mcp]", "kimss-mcp-server"],
       "env": {
         "KIMSS_API_KEY": "your_key_here",
         "KIMSS_BASE_URL": "https://api.kimss.ai",
@@ -32,6 +48,71 @@ Install the MCP extra on the fly and expose tools to your IDE:
 - MCP tools are **non-streaming** in v1 (`kimss_chat`, `kimss_create_agent`, `kimss_run_agent`, `kimss_complete`, `kimss_upload_file`, `kimss_create_vector_store`, `kimss_add_function_to_agent`).
 
 Alternatively, after `pip install 'kimss[mcp]'`, use `"command": "kimss-mcp-server"` on your PATH with the same `env`.
+
+## Windsurf Integration
+
+To use Kimss natively inside Codeium Windsurf as an MCP toolset, add the configuration to your local Windsurf settings:
+
+1. Open your global Windsurf MCP configuration file:
+   - **macOS/Linux:** `~/.codeium/windsurf/mcp_config.json`
+   - **Windows:** `%USERPROFILE%\.codeium\windsurf\mcp_config.json`
+
+2. Append the `kimss` config block to the `mcpServers` object:
+
+```json
+{
+  "mcpServers": {
+    "kimss": {
+      "command": "uvx",
+      "args": ["--from", "kimss[mcp]", "kimss-mcp-server"],
+      "env": {
+        "KIMSS_API_KEY": "your_api_key_here",
+        "KIMSS_BASE_URL": "https://api.kimss.ai"
+      }
+    }
+  }
+}
+```
+
+3. Reload Windsurf. The `kimss` tools appear under the MCP toolset once the server starts.
+
+> Note: use `uvx --from kimss[mcp] kimss-mcp-server` (not `--with`). `--from` tells `uvx` to install the `kimss` package and run its `kimss-mcp-server` console script; `--with` would make `uvx` look for a (nonexistent) PyPI package literally named `kimss-mcp-server`.
+
+## Claude Desktop Integration
+
+Connect Kimss agents as MCP tools inside [Claude Desktop](https://claude.ai/download):
+
+1. Install [`uv`](https://docs.astral.sh/uv/) so `uvx` is on your `PATH` (or use `pip install 'kimss[mcp]'` and set `"command": "kimss-mcp-server"` instead).
+2. Create a long-lived API key in the Kimss app: **Developer Settings → API Keys**.
+3. Open the MCP config: **Claude Desktop → Settings → Developer → Edit Config** (preferred — opens the correct `claude_desktop_config.json` for your install). Typical paths if you edit by hand:
+   - **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+   - **Windows (classic installer):** `%APPDATA%\Claude\claude_desktop_config.json`
+   - **Linux:** `~/.config/Claude/claude_desktop_config.json`
+4. Merge the `kimss` block into `mcpServers` (keep any existing servers):
+
+```json
+{
+  "mcpServers": {
+    "kimss": {
+      "command": "uvx",
+      "args": ["--from", "kimss[mcp]", "kimss-mcp-server"],
+      "env": {
+        "KIMSS_API_KEY": "your_api_key_here",
+        "KIMSS_BASE_URL": "https://api.kimss.ai",
+        "KIMSS_WORKSPACE_ID": ""
+      }
+    }
+  }
+}
+```
+
+5. Fully quit and relaunch Claude Desktop. Confirm Kimss tools appear (hammer / MCP tools indicator in the chat composer).
+
+**Try it:** ask Claude to list or run a Kimss agent (you need an `asst_…` id from the Kimss app), for example: *“Use kimss_run_agent with my assistant id asst_xxxx and message Hello.”*
+
+> Tip: On Windows Store / MSIX installs the config file can live under `%LOCALAPPDATA%\Packages\Claude_*\…` instead of `%APPDATA%\Claude\`. Always prefer **Settings → Developer → Edit Config** so you edit the file Claude actually reads.
+
+Legacy Desktop Extension metadata for MCP bundles lives under [`mcpb/manifest.json`](mcpb/manifest.json) (same `uvx --from kimss[mcp] kimss-mcp-server` entrypoint).
 
 ## Install (library)
 
@@ -53,10 +134,10 @@ pip install 'kimss[types]' # Pydantic (reserved for future typed models)
 pip install 'kimss[dev]'    # pytest, responses, ruff
 ```
 
-Editable from a checkout of this package root:
+Editable from a checkout of this repository root:
 
 ```bash
-cd kimss_sdk && pip install -e ".[dev,mcp]"
+pip install -e ".[dev,mcp]"
 ```
 
 ## Authentication
@@ -74,7 +155,7 @@ client = KimssClient(
     base_url="https://api.kimss.ai",
     credential=DefaultAzureCredential(),
     token_scope="api://<kimss-api-app-id>/.default",
-    workspace_id="worksfusion",
+    workspace_id="<your-workspace-slug>",
 )
 ```
 
