@@ -1,0 +1,22 @@
+---
+description: SDK is edited only in kimssApi/kimss_sdk; public repo is force-push mirrored
+alwaysApply: true
+---
+
+# Kimss SDK — mirror and coverage
+
+**Source of truth:** this directory lives under private monorepo `kimssApi/kimss_sdk/`. The public `kimss-python-sdk` repo is a **git subtree force-push mirror**. Never treat the public `main` as an editable SSOT.
+
+Cross-repo notes (local): `C:\projects\kimss-docs` → `architecture/sdk-overview.md`, `api/sdk-coverage.md`.
+
+## Conventions
+
+- Prefer `client.agents.run` → `POST /v1/agents/run` over legacy `/assistant_chat/`.
+- Public SDK param name: `conversation_id` (v2).
+- Canonical host: `https://api.kimss.ai`. Auth: `X-Kimss-Key` or Bearer.
+- Dense HTTP map in-package: `docs/llm-context.md`.
+- Platform/DB/backoffice architecture is **not** this package’s job — use kimss-docs / kimssApi `cursor_application_docs/`.
+
+## When changing client routes
+
+Update vault `api/sdk-coverage.md` and keep `docs/llm-context.md` in sync in the same monorepo change.
