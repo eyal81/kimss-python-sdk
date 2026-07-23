@@ -196,7 +196,8 @@ print(result_v1.text, result_v1.usage.total_credits, result_v1.conversation_id)
 - **`agent.query(message, conversation_id=None, chat_type="user_chat")`** – send a message; returns the `res` object from `POST /assistant_chat/`.
 - **`client.chat(assistant_id, message, conversation_id=None, chat_type="user_chat")`** – one-off chat without an Agent handle.
 - **`client.agents.create` / `client.agents.run`** – v1 agent management and orchestration (`/v1/agents/create`, `/v1/agents/run`). **`agents.run`** accepts positionals `(assistant_id, message)`, keyword aliases **`agent_id` / `prompt`**, optional **`conversation_id`** (maps to JSON `thread_id`), optional **`tags`** and **`routing_preference`**; **`stream=False`** returns **`AgentRunResult`** (dict subclass with **`.text`**, **`.usage.total_credits`**, **`.conversation_id`**) when `res` is a dict.
-- **`client.models.create`** – `/v1/models/completions`.
+- **`client.models.create`** – `/v1/models/completions` (Kimss `{"res": ...}` envelope).
+- **OpenAI-compatible HTTP** (not wrapped by this client): `GET /v1/models`, `POST /v1/chat/completions` at `base_url` + `/v1` with `Authorization: Bearer kimss_...` — for OmniRoute, Cursor, Cline, or `openai.OpenAI(base_url="https://api.kimss.ai/v1", ...)`.
 - **`client.files.upload`** – `/v1/files/upload`.
 - **`client.vector_stores.create`** – `/v1/vector_stores/create`.
 - **`before_request_hooks`** – list of callables `hook(ctx)` where `ctx` is `{"path": str, "json": dict, "headers": dict}`; hooks may mutate `json` / `headers` before the HTTP POST.

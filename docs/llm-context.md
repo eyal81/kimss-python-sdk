@@ -49,11 +49,23 @@ Override with `KimssClient(..., base_url=...)` or `KIMSS_BASE_URL` for MCP.
 | `KimssClient.add_function_to_agent` / `Agent.add_function` | `POST /agent_add_function/` | `assistant_id`, `name`, `description`, `parameters` (JSON Schema object) |
 | `KimssClient.agents.create` | `POST /v1/agents/create` | Management; requires privileged key |
 | `KimssClient.agents.run(..., stream=False)` | `POST /v1/agents/run` | **Preferred** non-streaming agent run; returns **`AgentRunResult`** (dict + **`.text`**, **`.usage.total_credits`**, **`.conversation_id`**) when `res` is a dict. Aliases **`agent_id`/`prompt`**; optional **`conversation_id`** (JSON `thread_id`), **`tags`**, **`routing_preference`** |
-| `KimssClient.models.create(..., stream=False)` | `POST /v1/models/completions` | Non-streaming completions |
+| `KimssClient.models.create(..., stream=False)` | `POST /v1/models/completions` | Non-streaming completions (`{"res": ...}` envelope) |
 | `KimssClient.files.upload` | `POST /v1/files/upload` | Multipart `file` |
 | `KimssClient.vector_stores.create` | `POST /v1/vector_stores/create` | Optional `agent_id` links store to agent |
+| *(OpenAI clients / OmniRoute / Cursor)* | `GET /v1/models` | OpenAI list; `id` = `logical_id` when set (e.g. `gpt-5.6-sol`) |
+| *(OpenAI clients / OmniRoute / Cursor)* | `POST /v1/chat/completions` | Bare OpenAI `chat.completion` / chunk SSE; auth `Bearer kimss_...` or `X-Kimss-Key` |
 
 Streaming (`stream=True`) returns an SSE iterator; **MCP tools in v1 are non-streaming only**.
+
+### OpenAI-compatible base URL
+
+```text
+base_url = https://api.kimss.ai/v1
+api_key  = kimss_...          # Authorization: Bearer or X-Kimss-Key
+model    = gpt-5.6-sol        # logical_id preferred
+```
+
+Same Foundry deployments and credit pool as `/v1/models/completions`. Do **not** use the App Service hostname.
 
 ## Agent / conversation state machine
 
