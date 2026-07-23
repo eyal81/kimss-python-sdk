@@ -2,6 +2,17 @@
 
 This file is optimized for AI assistants (Cursor, Windsurf, Claude Desktop, Copilot). Pair with the human-oriented [README.md](../README.md).
 
+## Clean machine checklist (do this first)
+
+1. **Python ≥ 3.10** available.
+2. Install the SDK only: `pip install kimss`  
+   Declared runtime dep: `requests>=2.28` (pulls urllib3, certifi, charset-normalizer, idna).  
+   Do **not** invent packages like `@kimss/sdk` or require azure-identity for API-key auth.
+3. Set env: `KIMSS_API_KEY` (required). Optional: `KIMSS_BASE_URL` (default `https://api.kimss.ai`).
+4. Preferred first call: `client.agents.run(assistant_id, "Hello!", stream=False)` → `POST /v1/agents/run`.
+5. Auth header for API keys: **`X-Kimss-Key`** — never `Authorization: Bearer` for Kimss API keys.
+6. Java customers: JDK 11+ `HttpClient` + `X-Kimss-Key`, or Maven `com.kimss:kimss-java` when published. No Node SDK — use `fetch` + `X-Kimss-Key`.
+
 ## Authentication
 
 ### API key (default for scripts and MCP)
@@ -34,10 +45,10 @@ Override with `KimssClient(..., base_url=...)` or `KIMSS_BASE_URL` for MCP.
 
 | SDK surface | HTTP | Notes |
 |-------------|------|-------|
-| `KimssClient.chat` / `Agent.query` | `POST /assistant_chat/` | Body: `assistant_id`, `usr_chat`, `chat_type`; optional **`thread_id`** (Foundry **conversation** id). SDK kwarg: **`conversation_id`**. |
+| `KimssClient.chat` / `Agent.query` | `POST /assistant_chat/` | Body: `assistant_id`, `usr_chat`, `chat_type`; optional **`thread_id`** (Foundry **conversation** id). SDK kwarg: **`conversation_id`**. Prefer **`agents.run`** for new code. |
 | `KimssClient.add_function_to_agent` / `Agent.add_function` | `POST /agent_add_function/` | `assistant_id`, `name`, `description`, `parameters` (JSON Schema object) |
 | `KimssClient.agents.create` | `POST /v1/agents/create` | Management; requires privileged key |
-| `KimssClient.agents.run(..., stream=False)` | `POST /v1/agents/run` | Non-streaming agent run; returns **`AgentRunResult`** (dict + **`.text`**, **`.usage.total_credits`**, **`.conversation_id`**) when `res` is a dict. Aliases **`agent_id`/`prompt`**; optional **`conversation_id`** (JSON `thread_id`), **`tags`**, **`routing_preference`** |
+| `KimssClient.agents.run(..., stream=False)` | `POST /v1/agents/run` | **Preferred** non-streaming agent run; returns **`AgentRunResult`** (dict + **`.text`**, **`.usage.total_credits`**, **`.conversation_id`**) when `res` is a dict. Aliases **`agent_id`/`prompt`**; optional **`conversation_id`** (JSON `thread_id`), **`tags`**, **`routing_preference`** |
 | `KimssClient.models.create(..., stream=False)` | `POST /v1/models/completions` | Non-streaming completions |
 | `KimssClient.files.upload` | `POST /v1/files/upload` | Multipart `file` |
 | `KimssClient.vector_stores.create` | `POST /v1/vector_stores/create` | Optional `agent_id` links store to agent |
