@@ -355,14 +355,28 @@ class ModelsNamespace:
     def create(
         self,
         model: str,
-        messages: List[Dict[str, str]],
+        messages: Optional[List[Dict[str, str]]] = None,
         *,
+        prompt: Optional[str] = None,
         stream: bool = False,
         system: Optional[str] = None,
         attachments: Optional[List[Dict[str, str]]] = None,
         max_tokens: Optional[int] = None,
         temperature: Optional[float] = None,
     ) -> Union[Dict[str, Any], Generator[Dict[str, Any], None, None]]:
+        """Create a model completion.
+
+        Prefer ``messages`` (chat turns). ``prompt`` is accepted as a convenience
+        alias for a single user message — Digital Workers / older call sites may
+        pass ``prompt=`` the same way as ``agents.run``.
+        """
+        if messages is None:
+            text = (prompt or "").strip()
+            if not text:
+                raise ValueError("models.create requires messages or a non-empty prompt")
+            messages = [{"role": "user", "content": text}]
+        elif not isinstance(messages, list) or not messages:
+            raise ValueError("models.create messages must be a non-empty list")
         payload: Dict[str, Any] = {
             "model": model,
             "messages": messages,

@@ -2,6 +2,12 @@
 
 All notable changes to the **kimss** PyPI package are documented here. The canonical source for this file in development is the monorepo path `kimss_sdk/CHANGELOG.md`.
 
+## [2.0.1] — 2026-07-24
+
+### Fixed
+
+- **`client.models.create`:** accept optional ``prompt=`` as an alias for a single user message. Call sites that mirrored ``agents.run(..., prompt=...)`` no longer raise ``TypeError: unexpected keyword argument 'prompt'``.
+
 ## [2.0.0] — 2026-06-03
 
 ### Breaking
