@@ -4,6 +4,7 @@ Use X-Kimss-Key for authentication (long-lived API key from your Kimss Developer
 """
 from __future__ import annotations
 
+import json
 import logging
 import os
 from typing import Any, Callable, Dict, Generator, List, MutableMapping, Optional, Union
@@ -278,9 +279,9 @@ class Agent:
 
 
 class VectorStoresNamespace:
-    """v1 vector store management: POST /v1/vector_stores/create.
+    """v1 vector store management: create + upload files.
 
-    Optional ``agent_id`` links the new store to an existing agent
+    Optional ``agent_id`` on create links the new store to an existing agent
     (``replace=True`` semantics on the API side).
     """
 
@@ -306,6 +307,39 @@ class VectorStoresNamespace:
         if tenant_id is not None and str(tenant_id).strip():
             payload["tenant_id"] = str(tenant_id).strip()
         r = self._client._post_json("/v1/vector_stores/create", payload, timeout=120)
+        raise_for_kimss_error(r)
+        body = r.json()
+        return body.get("res", body)
+
+    def upload_file(
+        self,
+        vector_store_id: str,
+        path: Union[str, bytes],
+        filename: Optional[str] = None,
+        *,
+        content_type: str = "application/octet-stream",
+    ) -> Dict[str, Any]:
+        """Upload a file into an existing vector store (``POST /v1/vector_stores/{id}/files``)."""
+        import os
+
+        vsid = str(vector_store_id or "").strip()
+        if not vsid:
+            raise ValueError("vector_store_id is required")
+        if isinstance(path, (bytes, bytearray)):
+            data = bytes(path)
+            fn = filename or "upload"
+        else:
+            fn = filename or os.path.basename(str(path))
+            with open(path, "rb") as f:  # noqa: SIM115
+                data = f.read()
+        url = f"{self._client.base_url}/v1/vector_stores/{vsid}/files"
+        h = self._client._request_headers(include_content_type=False)
+        r = self._client._session.post(
+            url,
+            files={"file": (fn, data, content_type)},
+            headers=h,
+            timeout=120,
+        )
         raise_for_kimss_error(r)
         body = r.json()
         return body.get("res", body)
@@ -481,6 +515,23 @@ class AgentRunResult(dict):
     def usage(self) -> AgentRunUsage:
         return AgentRunUsage(self)
 
+    @property
+    def requires_action(self) -> bool:
+        return bool(self.get("requires_action")) or str(self.get("status") or "") == "requires_action"
+
+    @property
+    def tool_calls(self) -> List[Dict[str, Any]]:
+        raw = self.get("tool_calls")
+        return list(raw) if isinstance(raw, list) else []
+
+    @property
+    def previous_response_id(self) -> Optional[str]:
+        for key in ("previous_response_id", "response_id"):
+            v = self.get(key)
+            if v is not None and str(v).strip():
+                return str(v).strip()
+        return None
+
 
 class AgentsRunV1:
     """v1 agent management + orchestration.
@@ -539,18 +590,33 @@ class AgentsRunV1:
         stream: bool = False,
         conversation_id: Optional[str] = None,
         chat_type: str = "user_chat",
+        tools: Optional[Dict[str, Any]] = None,
+        max_tool_rounds: int = 16,
     ) -> Union[AgentRunResult, Dict[str, Any], Generator[Dict[str, Any], None, None]]:
+        """Run an agent turn.
+
+        When ``tools`` is a mapping of ``{name: callable}``, the SDK executes those
+        functions locally whenever the API returns ``requires_action`` (client-side
+        tool loop / Agentic RAG pattern).
+        """
         aid = str(assistant_id or "").strip() or str(agent_id or "").strip()
         msg_src = message if message is not None else prompt
         usr_chat = "" if msg_src is None else str(msg_src)
         if not aid:
             raise ValueError("agents.run requires assistant_id or agent_id")
-        if not usr_chat.strip():
+        if not usr_chat.strip() and not tools:
             raise ValueError("agents.run requires message or prompt")
+
+        client_tools: Dict[str, Any] = {}
+        if isinstance(tools, dict):
+            client_tools = {str(k).strip(): v for k, v in tools.items() if str(k).strip() and callable(v)}
+
+        if stream and client_tools:
+            raise ValueError("agents.run client-side tools= is not supported with stream=True")
 
         payload: Dict[str, Any] = {
             "assistant_id": aid,
-            "usr_chat": usr_chat,
+            "usr_chat": usr_chat or " ",
             "stream": stream,
             "chat_type": chat_type,
         }
@@ -561,36 +627,87 @@ class AgentsRunV1:
         rp = str(routing_preference or "").strip()
         if rp:
             payload["routing_preference"] = rp
+        if client_tools:
+            payload["client_tool_names"] = list(client_tools.keys())
 
-        if not stream:
-            r = self._client._post_json("/v1/agents/run", payload, timeout=120)
+        if stream:
+            if self._client.workspace_id and not str(payload.get("tenant_id") or "").strip():
+                payload = dict(payload)
+                payload["tenant_id"] = self._client.workspace_id
+            ctx: Dict[str, Any] = {
+                "path": "/v1/agents/run",
+                "json": payload,
+                "headers": self._client._request_headers(),
+            }
+            _attach_sdk_context_header(ctx["headers"], "/v1/agents/run", payload)
+            for hook in self._client._hooks:
+                try:
+                    hook(ctx)
+                except Exception:
+                    logger.exception("before_request hook failed path=v1/agents/run")
+                    raise
+            url = f"{self._client.base_url}/v1/agents/run"
+            response = self._client._session.post(
+                url, json=ctx["json"], headers=ctx["headers"], stream=True, timeout=300
+            )
+            raise_for_kimss_error(response)
+
+            def _gen() -> Generator[Dict[str, Any], None, None]:
+                yield from self._client._iter_sse_json(response)
+
+            return _gen()
+
+        def _post_once(body: Dict[str, Any]) -> AgentRunResult:
+            r = self._client._post_json("/v1/agents/run", body, timeout=120)
             raise_for_kimss_error(r)
             raw = r.json().get("res", r.json())
             if isinstance(raw, dict):
                 return AgentRunResult(raw)
-            return raw
-        if self._client.workspace_id and not str(payload.get("tenant_id") or "").strip():
-            payload = dict(payload)
-            payload["tenant_id"] = self._client.workspace_id
-        ctx: Dict[str, Any] = {
-            "path": "/v1/agents/run",
-            "json": payload,
-            "headers": self._client._request_headers(),
-        }
-        _attach_sdk_context_header(ctx["headers"], "/v1/agents/run", payload)
-        for hook in self._client._hooks:
-            try:
-                hook(ctx)
-            except Exception:
-                logger.exception("before_request hook failed path=v1/agents/run")
-                raise
-        url = f"{self._client.base_url}/v1/agents/run"
-        response = self._client._session.post(
-            url, json=ctx["json"], headers=ctx["headers"], stream=True, timeout=300
-        )
-        raise_for_kimss_error(response)
+            return AgentRunResult({"output": str(raw), "status": "completed"})
 
-        def _gen() -> Generator[Dict[str, Any], None, None]:
-            yield from self._client._iter_sse_json(response)
-
-        return _gen()
+        result = _post_once(payload)
+        rounds = 0
+        while client_tools and result.requires_action and rounds < max(1, int(max_tool_rounds)):
+            rounds += 1
+            outputs: List[Dict[str, Any]] = []
+            for call in result.tool_calls:
+                name = str(call.get("name") or "").strip()
+                call_id = str(call.get("call_id") or call.get("id") or "").strip()
+                args_raw = call.get("arguments") or "{}"
+                try:
+                    args = json.loads(args_raw) if isinstance(args_raw, str) else (args_raw or {})
+                    if not isinstance(args, dict):
+                        args = {"_": args}
+                except Exception:
+                    args = {"_raw": args_raw}
+                fn = client_tools.get(name)
+                try:
+                    if fn is None:
+                        out = f"tool_not_provided:{name}"
+                    else:
+                        try:
+                            out_val = fn(**args)
+                        except TypeError:
+                            out_val = fn(args)
+                        if out_val is None:
+                            out = ""
+                        elif isinstance(out_val, (str, int, float, bool)):
+                            out = str(out_val)
+                        else:
+                            out = json.dumps(out_val, ensure_ascii=False)
+                except Exception as exc:  # noqa: BLE001
+                    out = str(exc)[:8000]
+                outputs.append({"type": "function_call_output", "call_id": call_id, "output": out})
+            cont: Dict[str, Any] = {
+                "assistant_id": aid,
+                "usr_chat": " ",
+                "stream": False,
+                "chat_type": chat_type,
+                "client_tool_names": list(client_tools.keys()),
+                "tool_outputs": outputs,
+                "previous_response_id": result.previous_response_id,
+            }
+            if result.conversation_id:
+                cont["thread_id"] = result.conversation_id
+            result = _post_once(cont)
+        return result
