@@ -135,6 +135,7 @@ class KimssClient:
         self.agents = AgentsRunV1(self)
         self.vector_stores = VectorStoresNamespace(self)
         self.files = FilesNamespace(self)
+        self.images = ImagesNamespace(self)
 
     def _request_headers(self, *, include_content_type: bool = True) -> Dict[str, str]:
         headers = dict(self.headers)
@@ -378,6 +379,57 @@ class FilesNamespace:
         raise_for_kimss_error(r)
         body = r.json()
         return body.get("res", body)
+
+
+class ImagesNamespace:
+    """Image generation: POST /v1/images/generations (gpt-image-2 family).
+
+    Feature-gated server side (``KIMSS_IMAGES_API_ENABLED``); a 404 with
+    ``feature_disabled`` means the gateway has not enabled image generation
+    for your environment yet.
+    """
+
+    def __init__(self, client: KimssClient) -> None:
+        self._client = client
+
+    def generate(
+        self,
+        prompt: str,
+        *,
+        model: Optional[str] = None,
+        size: Optional[str] = None,
+        quality: Optional[str] = None,
+        n: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Generate image(s) from a text prompt.
+
+        Args:
+            prompt: Text description of the desired image.
+            model: Logical model or deployment name (default ``gpt-image-2``).
+            size: ``1024x1024`` (default), ``1024x1536``, ``1536x1024``, or ``auto``.
+            quality: ``low``, ``medium`` (default), ``high``, or ``auto``.
+            n: Number of images (1-4, default 1).
+
+        Returns:
+            OpenAI-compatible dict: ``{"created", "model", "data": [{"b64_json", ...}], "usage"}``.
+            Decode ``data[0]["b64_json"]`` with :func:`base64.b64decode` to get bytes.
+        """
+        text = (prompt or "").strip()
+        if not text:
+            raise ValueError("images.generate requires a non-empty prompt")
+        payload: Dict[str, Any] = {"prompt": text}
+        if model is not None and str(model).strip():
+            payload["model"] = str(model).strip()
+        if size is not None:
+            payload["size"] = size
+        if quality is not None:
+            payload["quality"] = quality
+        if n is not None:
+            payload["n"] = int(n)
+        r = self._client._post_json("/v1/images/generations", payload, timeout=300)
+        raise_for_kimss_error(r)
+        body = r.json()
+        return body.get("res", body) if isinstance(body, dict) else body
 
 
 class ModelsNamespace:
