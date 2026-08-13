@@ -133,6 +133,7 @@ class KimssClient:
         self._session.mount("http://", adapter)
         self.models = ModelsNamespace(self)
         self.agents = AgentsRunV1(self)
+        self.usage = UsageNamespace(self)
         self.vector_stores = VectorStoresNamespace(self)
         self.files = FilesNamespace(self)
         self.images = ImagesNamespace(self)
@@ -585,14 +586,36 @@ class AgentRunResult(dict):
         return None
 
 
+class UsageNamespace:
+    """Self-reported BYO usage: POST /v1/usage/events (run API key scope).
+
+    For streaming OpenAI-compatible calls, set ``stream_options={"include_usage": True}``
+    so the final SSE chunk carries provider token counts — do not estimate.
+    """
+
+    def __init__(self, client: KimssClient) -> None:
+        self._client = client
+
+    def report(self, events: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Report a batch of usage events for previously registered external agents.
+
+        Each event needs ``agent_id``, ``correlation_id``, ``prompt_tokens``,
+        ``completion_tokens``. Optional: ``model``. Max 25 events per call.
+        """
+        if not isinstance(events, list) or not events:
+            raise ValueError("usage.report requires a non-empty events list")
+        r = self._client._post_json("/v1/usage/events", {"events": events}, timeout=60)
+        raise_for_kimss_error(r)
+        body = r.json()
+        return body.get("res", body)
+
+
 class AgentsRunV1:
     """v1 agent management + orchestration.
 
-    - ``create`` -> POST /v1/agents/create (management API key scope or Entra
-      Bearer with equivalent privileges). Returns the inner ``res`` payload
-      (e.g. ``{"assistant_id": "...", "agent_name": "..."}``).
-    - ``run``    -> POST /v1/agents/run   (orchestration; replaces /assistant_chat
-      for new integrations).
+    - ``create``   -> POST /v1/agents/create (Foundry-hosted; management scope).
+    - ``register`` -> POST /v1/agents/register (customer-owned inventory; management scope).
+    - ``run``      -> POST /v1/agents/run (hosted orchestration).
     """
 
     def __init__(self, client: KimssClient) -> None:
@@ -626,6 +649,51 @@ class AgentsRunV1:
         if tenant_id is not None and str(tenant_id).strip():
             payload["tenant_id"] = str(tenant_id).strip()
         r = self._client._post_json("/v1/agents/create", payload, timeout=120)
+        raise_for_kimss_error(r)
+        body = r.json()
+        return body.get("res", body)
+
+    def register(
+        self,
+        *,
+        name: str,
+        framework: Optional[str] = None,
+        models: Optional[List[str]] = None,
+        description: Optional[str] = None,
+        owner: Optional[str] = None,
+        purpose: Optional[str] = None,
+        risk_tier: Optional[str] = None,
+        endpoint_url: Optional[str] = None,
+        external_ref: Optional[str] = None,
+        tenant_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Register a customer-owned (external) agent in the Kimss inventory.
+
+        Does not create a Foundry-hosted agent. Requires a **management** API key
+        scope. Returns ``{"agent_id": "ext-...", "origin": "external", ...}``.
+        """
+        payload: Dict[str, Any] = {"name": (name or "").strip()}
+        if not payload["name"]:
+            raise ValueError("agents.register requires a non-empty name")
+        if framework is not None and str(framework).strip():
+            payload["framework"] = str(framework).strip()
+        if models is not None:
+            payload["models"] = [str(m).strip() for m in models if str(m or "").strip()]
+        if description is not None:
+            payload["description"] = description
+        if owner is not None and str(owner).strip():
+            payload["owner"] = str(owner).strip()
+        if purpose is not None:
+            payload["purpose"] = purpose
+        if risk_tier is not None and str(risk_tier).strip():
+            payload["risk_tier"] = str(risk_tier).strip()
+        if endpoint_url is not None and str(endpoint_url).strip():
+            payload["endpoint_url"] = str(endpoint_url).strip()
+        if external_ref is not None and str(external_ref).strip():
+            payload["external_ref"] = str(external_ref).strip()
+        if tenant_id is not None and str(tenant_id).strip():
+            payload["tenant_id"] = str(tenant_id).strip()
+        r = self._client._post_json("/v1/agents/register", payload, timeout=60)
         raise_for_kimss_error(r)
         body = r.json()
         return body.get("res", body)

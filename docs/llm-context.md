@@ -48,6 +48,8 @@ Override with `KimssClient(..., base_url=...)` or `KIMSS_BASE_URL` for MCP.
 | `KimssClient.chat` / `Agent.query` | `POST /assistant_chat/` | Body: `assistant_id`, `usr_chat`, `chat_type`; optional **`thread_id`** (Foundry **conversation** id). SDK kwarg: **`conversation_id`**. Prefer **`agents.run`** for new code. |
 | `KimssClient.add_function_to_agent` / `Agent.add_function` | `POST /agent_add_function/` | `assistant_id`, `name`, `description`, `parameters` (JSON Schema object) |
 | `KimssClient.agents.create` | `POST /v1/agents/create` | Management; requires privileged key |
+| `KimssClient.agents.register` | `POST /v1/agents/register` | Register a customer-owned agent (inventory only; management scope) |
+| `KimssClient.usage.report` | `POST /v1/usage/events` | Self-reported BYO token usage (run scope). Prefer `stream_options.include_usage` on the customer's LLM client. |
 | `KimssClient.agents.run(..., stream=False)` | `POST /v1/agents/run` | **Preferred** non-streaming agent run; returns **`AgentRunResult`** (dict + **`.text`**, **`.usage.total_credits`**, **`.conversation_id`**) when `res` is a dict. Aliases **`agent_id`/`prompt`**; optional **`conversation_id`** (JSON `thread_id`), **`tags`**, **`routing_preference`** |
 | `KimssClient.models.create(..., stream=False)` | `POST /v1/models/completions` | Non-streaming completions (`{"res": ...}` envelope) |
 | `KimssClient.images.generate` | `POST /v1/images/generations` | OpenAI-compatible image gen (`data[].b64_json`); feature-gated — 404 `feature_disabled` when off |
