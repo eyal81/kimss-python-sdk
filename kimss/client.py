@@ -35,8 +35,8 @@ def _sdk_resource_meta(path: str, json_body: Dict[str, Any]) -> Optional[tuple]:
     jb = json_body or {}
     if "/v1/models/completions" in p:
         return ("model", str(jb.get("model") or "").strip())
-    if "/v1/agents/run" in p or "/assistant_chat" in p:
-        return ("agent", str(jb.get("assistant_id") or "").strip())
+    if "/v1/agents/run" in p or "/assistant_chat" in p or "/v1/dw/hermis_chat" in p:
+        return ("agent", str(jb.get("assistant_id") or jb.get("agent_id") or "").strip())
     if "/agent_add_function" in p:
         return ("agent", str(jb.get("assistant_id") or "").strip())
     return None
@@ -133,6 +133,7 @@ class KimssClient:
         self._session.mount("http://", adapter)
         self.models = ModelsNamespace(self)
         self.agents = AgentsRunV1(self)
+        self.dw = DwNamespace(self)
         self.usage = UsageNamespace(self)
         self.vector_stores = VectorStoresNamespace(self)
         self.files = FilesNamespace(self)
@@ -608,6 +609,53 @@ class UsageNamespace:
         raise_for_kimss_error(r)
         body = r.json()
         return body.get("res", body)
+
+
+class DwNamespace:
+    """Isolated Digital Worker Hermis orchestrator (``POST /v1/dw/hermis_chat``).
+
+    Does not flip ``KIMSS_HERMIS_RUNTIME``. Customer Foundry chat stays on
+    ``/v1/agents/run`` / ``/assistant_chat``.
+    """
+
+    def __init__(self, client: KimssClient) -> None:
+        self._client = client
+
+    def hermis_chat(
+        self,
+        *,
+        agent_id: str,
+        messages: Optional[List[Dict[str, Any]]] = None,
+        prompt: Optional[str] = None,
+        system: Optional[str] = None,
+        thread_id: Optional[str] = None,
+        max_tokens: Optional[int] = None,
+        tenant_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        aid = (agent_id or "").strip()
+        if not aid:
+            raise ValueError("dw.hermis_chat requires agent_id")
+        turns: List[Dict[str, Any]]
+        if messages is not None:
+            turns = list(messages)
+        else:
+            text = (prompt or "").strip()
+            if not text:
+                raise ValueError("dw.hermis_chat requires messages or a non-empty prompt")
+            turns = [{"role": "user", "content": text}]
+        payload: Dict[str, Any] = {"agent_id": aid, "messages": turns}
+        if system is not None:
+            payload["system"] = system
+        if thread_id is not None and str(thread_id).strip():
+            payload["thread_id"] = str(thread_id).strip()
+        if max_tokens is not None:
+            payload["max_tokens"] = int(max_tokens)
+        if tenant_id is not None and str(tenant_id).strip():
+            payload["tenant_id"] = str(tenant_id).strip()
+        r = self._client._post_json("/v1/dw/hermis_chat", payload, timeout=180)
+        raise_for_kimss_error(r)
+        body = r.json()
+        return body.get("res", body) if isinstance(body, dict) else body
 
 
 class AgentsRunV1:
