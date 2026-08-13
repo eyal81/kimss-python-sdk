@@ -51,7 +51,7 @@ Override with `KimssClient(..., base_url=...)` or `KIMSS_BASE_URL` for MCP.
 | `KimssClient.agents.register` | `POST /v1/agents/register` | Register a customer-owned agent (inventory only; management scope) |
 | `KimssClient.usage.report` | `POST /v1/usage/events` | Self-reported BYO token usage (run scope). Prefer `stream_options.include_usage` on the customer's LLM client. |
 | `KimssClient.agents.run(..., stream=False)` | `POST /v1/agents/run` | **Preferred** non-streaming agent run; returns **`AgentRunResult`** (dict + **`.text`**, **`.usage.total_credits`**, **`.conversation_id`**) when `res` is a dict. Aliases **`agent_id`/`prompt`**; optional **`conversation_id`** (JSON `thread_id`), **`tags`**, **`routing_preference`** |
-| `KimssClient.models.create(..., stream=False)` | `POST /v1/models/completions` | Non-streaming completions (`{"res": ...}` envelope) |
+| `KimssClient.models.create(..., stream=False)` | `POST /v1/models/completions` | Non-streaming completions (`{"res": ...}` envelope). Optional client ``agent_id`` / env ``KIMSS_AGENT_ID`` → ``X-Kimss-Agent-Id`` (telemetry + kill switch). |
 | `KimssClient.images.generate` | `POST /v1/images/generations` | OpenAI-compatible image gen (`data[].b64_json`); feature-gated — 404 `feature_disabled` when off |
 | `KimssClient.files.upload` | `POST /v1/files/upload` | Multipart `file` |
 | `KimssClient.vector_stores.create` | `POST /v1/vector_stores/create` | Optional `agent_id` links store to agent |

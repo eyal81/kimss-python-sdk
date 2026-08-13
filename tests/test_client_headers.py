@@ -47,6 +47,24 @@ def test_workspace_id_header_and_tenant_id_body() -> None:
     assert payload.get("tenant_id") == "ws1"
 
 
+@responses.activate
+def test_agent_id_sets_x_kimss_agent_id() -> None:
+    responses.add(
+        responses.POST,
+        "https://api.kimss.ai/assistant_chat/",
+        json={"res": {}},
+        status=200,
+    )
+    client = KimssClient(
+        api_key="k",
+        base_url="https://api.kimss.ai",
+        agent_id="ext-dw-router",
+        session=None,
+    )
+    client.chat("asst_x", "hi")
+    assert responses.calls[0].request.headers.get("X-Kimss-Agent-Id") == "ext-dw-router"
+
+
 def test_default_retry_does_not_include_429() -> None:
     client = KimssClient(api_key="k", base_url="https://api.kimss.ai", session=None)
     adapter = client._session.get_adapter("https://")

@@ -82,6 +82,7 @@ class KimssClient:
         credential: Any = None,
         token_scope: Optional[str] = None,
         workspace_id: Optional[str] = None,
+        agent_id: Optional[str] = None,
         before_request_hooks: Optional[List[BeforeRequestHook]] = None,
         privacy: Any = None,
         session: Optional[requests.Session] = None,
@@ -96,6 +97,10 @@ class KimssClient:
             or KIMSS_TOKEN_SCOPE when present.
         workspace_id: Optional tenant/workspace key to stamp onto request
             headers and JSON bodies as tenant_id.
+        agent_id: Optional registered agent id. Sent as ``X-Kimss-Agent-Id`` so
+            completions/chat/images telemetry is attributed to that inventory
+            row (and kill-switched when the agent is disabled). Falls back to
+            env ``KIMSS_AGENT_ID`` when unset.
         base_url: Kimss API URL. Use https://api.kimss.ai for production.
         before_request_hooks: Optional callables invoked as hook(ctx) where ctx is
             {"path": str, "json": dict, "headers": dict}; hooks may mutate json/headers.
@@ -112,6 +117,7 @@ class KimssClient:
             or ""
         ).strip()
         self.workspace_id = (workspace_id or os.getenv("KIMSS_WORKSPACE_ID") or "").strip()
+        self.agent_id = (agent_id or os.getenv("KIMSS_AGENT_ID") or "").strip()
         if not self.api_key and self._credential is None:
             raise ValueError("KimssClient requires either api_key or credential")
         if self._credential is not None and not self._token_scope:
@@ -124,6 +130,8 @@ class KimssClient:
             self.headers["X-Kimss-Key"] = self.api_key
         if self.workspace_id:
             self.headers["X-Workspace-ID"] = self.workspace_id
+        if self.agent_id:
+            self.headers["X-Kimss-Agent-Id"] = self.agent_id
         self._hooks: List[BeforeRequestHook] = list(before_request_hooks or [])
         if privacy is not None:
             self._hooks.append(privacy)
