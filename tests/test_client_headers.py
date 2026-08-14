@@ -65,6 +65,24 @@ def test_agent_id_sets_x_kimss_agent_id() -> None:
     assert responses.calls[0].request.headers.get("X-Kimss-Agent-Id") == "ext-dw-router"
 
 
+@responses.activate
+def test_agents_get_run_posts_v1_agents_run() -> None:
+    responses.add(
+        responses.POST,
+        "https://api.kimss.ai/v1/agents/run",
+        json={"res": {"output": "ok", "thread_id": "conv_1"}},
+        status=200,
+    )
+    client = KimssClient(api_key="k", base_url="https://api.kimss.ai", session=None)
+    agent = client.agents.get("agent_version_0586")
+    result = agent.run("Execute workflow", stream=False)
+    assert result["output"] == "ok"
+    assert len(responses.calls) == 1
+    body = json.loads(responses.calls[0].request.body)
+    assert body["assistant_id"] == "agent_version_0586"
+    assert body["usr_chat"] == "Execute workflow"
+
+
 def test_default_retry_does_not_include_429() -> None:
     client = KimssClient(api_key="k", base_url="https://api.kimss.ai", session=None)
     adapter = client._session.get_adapter("https://")

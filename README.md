@@ -177,11 +177,8 @@ result = agent.query("Hello")
 # result is the API "res" payload (messages, usage, etc.). Prefer conversation_id in SDK 2+.
 result2 = agent.query("What did I just say?", conversation_id=result.get("thread_id"))
 
-# One-off chat without an Agent handle (same wire field as above)
-result3 = client.chat("asst_xxxx", "Hi", conversation_id=result.get("thread_id"))
-
-# Or v1 orchestration (preferred): non-stream returns AgentRunResult (.text, .usage, .conversation_id)
-result_v1 = client.agents.run("asst_xxxx", "Hello", stream=False)
+# Preferred: Agent.handle via agents.get → POST /v1/agents/run
+result_v1 = client.agents.get("asst_xxxx").run("Hello", stream=False)
 print(result_v1.text, result_v1.usage.total_credits, result_v1.conversation_id)
 ```
 
@@ -192,7 +189,7 @@ print(result_v1.text, result_v1.usage.total_credits, result_v1.conversation_id)
 ## API
 
 - **`KimssClient(..., retry=None)`** – authenticated client. Provide either `api_key` (uses `X-Kimss-Key`) or `credential` + `token_scope` (uses `Authorization: Bearer`). `workspace_id` optionally stamps `X-Workspace-ID` and `tenant_id` for isolated worker telemetry. Uses a `requests.Session` with **retry on 5xx** (not 429) and **Retry-After** by default so credit exhaustion and rate limits surface immediately as typed errors (`KimssCreditExhausted`, `KimssRateLimited`, `KimssSubscriptionRequired`).
-- **`client.get_agent(agent_id)`** – returns an `Agent` for that assistant.
+- **`client.get_agent(agent_id)`** / **`client.agents.get(agent_id)`** – returns an `Agent`. **`Agent.run`** calls `POST /v1/agents/run`.
 - **`agent.query(message, conversation_id=None, chat_type="user_chat")`** – send a message; returns the `res` object from `POST /assistant_chat/`.
 - **`client.chat(assistant_id, message, conversation_id=None, chat_type="user_chat")`** – one-off chat without an Agent handle.
 - **`client.agents.create` / `client.agents.run`** – v1 agent management and orchestration (`/v1/agents/create`, `/v1/agents/run`). **`agents.run`** accepts positionals `(assistant_id, message)`, keyword aliases **`agent_id` / `prompt`**, optional **`conversation_id`** (maps to JSON `thread_id`), optional **`tags`** and **`routing_preference`**; **`stream=False`** returns **`AgentRunResult`** (dict subclass with **`.text`**, **`.usage.total_credits`**, **`.conversation_id`**) when `res` is a dict.

@@ -277,6 +277,31 @@ class Agent:
         data = response.json()
         return data.get("res", data)
 
+    def run(
+        self,
+        message: str,
+        *,
+        stream: bool = False,
+        conversation_id: Optional[str] = None,
+        chat_type: str = "user_chat",
+        tools: Optional[Dict[str, Any]] = None,
+        max_tool_rounds: int = 16,
+        tags: Optional[Any] = None,
+        routing_preference: Optional[str] = None,
+    ) -> Union["AgentRunResult", Dict[str, Any], Generator[Dict[str, Any], None, None]]:
+        """Run this agent via ``POST /v1/agents/run`` (``client.agents.run``)."""
+        return self._client.agents.run(
+            self.id,
+            message,
+            stream=stream,
+            conversation_id=conversation_id,
+            chat_type=chat_type,
+            tools=tools,
+            max_tool_rounds=max_tool_rounds,
+            tags=tags,
+            routing_preference=routing_preference,
+        )
+
     def add_function(
         self,
         name: str,
@@ -671,11 +696,19 @@ class AgentsRunV1:
 
     - ``create``   -> POST /v1/agents/create (Foundry-hosted; management scope).
     - ``register`` -> POST /v1/agents/register (customer-owned inventory; management scope).
+    - ``get``      -> local Agent handle (no HTTP).
     - ``run``      -> POST /v1/agents/run (hosted orchestration).
     """
 
     def __init__(self, client: KimssClient) -> None:
         self._client = client
+
+    def get(self, agent_id: str) -> Agent:
+        """Return an ``Agent`` handle for ``agent_id`` (same as ``KimssClient.get_agent``)."""
+        aid = str(agent_id or "").strip()
+        if not aid:
+            raise ValueError("agents.get requires a non-empty agent_id")
+        return Agent(self._client, aid)
 
     def create(
         self,

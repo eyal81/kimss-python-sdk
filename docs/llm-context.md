@@ -9,7 +9,7 @@ This file is optimized for AI assistants (Cursor, Windsurf, Claude Desktop, Copi
    Declared runtime dep: `requests>=2.28` (pulls urllib3, certifi, charset-normalizer, idna).  
    Do **not** invent packages like `@kimss/sdk` or require azure-identity for API-key auth.
 3. Set env: `KIMSS_API_KEY` (required). Optional: `KIMSS_BASE_URL` (default `https://api.kimss.ai`).
-4. Preferred first call: `client.agents.run(assistant_id, "Hello!", stream=False)` → `POST /v1/agents/run`.
+4. Preferred first call: `client.agents.get(assistant_id).run("Hello!", stream=False)` or `client.agents.run(assistant_id, "Hello!", stream=False)` → `POST /v1/agents/run`.
 5. Auth header for API keys: **`X-Kimss-Key`** — never `Authorization: Bearer` for Kimss API keys.
 6. Java customers: JDK 11+ `HttpClient` + `X-Kimss-Key`, or Maven `com.kimss:kimss-java` when published. No Node SDK — use `fetch` + `X-Kimss-Key`.
 
@@ -50,6 +50,7 @@ Override with `KimssClient(..., base_url=...)` or `KIMSS_BASE_URL` for MCP.
 | `KimssClient.agents.create` | `POST /v1/agents/create` | Management; requires privileged key |
 | `KimssClient.agents.register` | `POST /v1/agents/register` | Register a customer-owned agent (inventory only; management scope) |
 | `KimssClient.usage.report` | `POST /v1/usage/events` | Self-reported BYO token usage (run scope). Prefer `stream_options.include_usage` on the customer's LLM client. |
+| `KimssClient.agents.get` / `Agent.run` | `POST /v1/agents/run` | Local handle; `run` is the preferred call |
 | `KimssClient.agents.run(..., stream=False)` | `POST /v1/agents/run` | **Preferred** non-streaming agent run; returns **`AgentRunResult`** (dict + **`.text`**, **`.usage.total_credits`**, **`.conversation_id`**) when `res` is a dict. Aliases **`agent_id`/`prompt`**; optional **`conversation_id`** (JSON `thread_id`), **`tags`**, **`routing_preference`** |
 | `KimssClient.models.create(..., stream=False)` | `POST /v1/models/completions` | Non-streaming completions (`{"res": ...}` envelope). Optional client ``agent_id`` / env ``KIMSS_AGENT_ID`` → ``X-Kimss-Agent-Id`` (telemetry + kill switch). |
 | `KimssClient.images.generate` | `POST /v1/images/generations` | OpenAI-compatible image gen (`data[].b64_json`); feature-gated — 404 `feature_disabled` when off |
