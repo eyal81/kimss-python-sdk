@@ -143,7 +143,6 @@ class KimssClient:
         self.agents = AgentsRunV1(self)
         self.dw = DwNamespace(self)
         self.usage = UsageNamespace(self)
-        self.vector_stores = VectorStoresNamespace(self)
         self.files = FilesNamespace(self)
         self.images = ImagesNamespace(self)
 
@@ -306,73 +305,6 @@ class Agent:
         return self._client.add_function_to_agent(
             self.id, name, description or "", parameters
         )
-
-
-class VectorStoresNamespace:
-    """v1 vector store management: create + upload files.
-
-    Optional ``agent_id`` on create links the new store to an existing agent
-    (``replace=True`` semantics on the API side).
-    """
-
-    def __init__(self, client: KimssClient) -> None:
-        self._client = client
-
-    def create(
-        self,
-        *,
-        name: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        agent_id: Optional[str] = None,
-        tenant_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        """Create a vector store and return its ``res`` payload."""
-        payload: Dict[str, Any] = {}
-        if name is not None and str(name).strip():
-            payload["name"] = str(name).strip()
-        if metadata is not None:
-            payload["metadata"] = metadata
-        if agent_id is not None and str(agent_id).strip():
-            payload["agent_id"] = str(agent_id).strip()
-        if tenant_id is not None and str(tenant_id).strip():
-            payload["tenant_id"] = str(tenant_id).strip()
-        r = self._client._post_json("/v1/vector_stores/create", payload, timeout=120)
-        raise_for_kimss_error(r)
-        body = r.json()
-        return body.get("res", body)
-
-    def upload_file(
-        self,
-        vector_store_id: str,
-        path: Union[str, bytes],
-        filename: Optional[str] = None,
-        *,
-        content_type: str = "application/octet-stream",
-    ) -> Dict[str, Any]:
-        """Upload a file into an existing vector store (``POST /v1/vector_stores/{id}/files``)."""
-        import os
-
-        vsid = str(vector_store_id or "").strip()
-        if not vsid:
-            raise ValueError("vector_store_id is required")
-        if isinstance(path, (bytes, bytearray)):
-            data = bytes(path)
-            fn = filename or "upload"
-        else:
-            fn = filename or os.path.basename(str(path))
-            with open(path, "rb") as f:  # noqa: SIM115
-                data = f.read()
-        url = f"{self._client.base_url}/v1/vector_stores/{vsid}/files"
-        h = self._client._request_headers(include_content_type=False)
-        r = self._client._session.post(
-            url,
-            files={"file": (fn, data, content_type)},
-            headers=h,
-            timeout=120,
-        )
-        raise_for_kimss_error(r)
-        body = r.json()
-        return body.get("res", body)
 
 
 class FilesNamespace:

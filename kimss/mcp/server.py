@@ -132,22 +132,6 @@ def build_mcp() -> Any:
         )
 
     @mcp.tool()
-    def kimss_create_vector_store(
-        name: str | None = None,
-        agent_id: str | None = None,
-        metadata: dict[str, Any] | None = None,
-        tenant_id: str | None = None,
-    ) -> Any:
-        """Create a vector store (POST /v1/vector_stores/create)."""
-        return _run_tool(
-            mcp_tools.kimss_create_vector_store,
-            name=name,
-            agent_id=agent_id,
-            metadata=metadata,
-            tenant_id=tenant_id,
-        )
-
-    @mcp.tool()
     def kimss_add_function_to_agent(
         agent_id: str,
         name: str,

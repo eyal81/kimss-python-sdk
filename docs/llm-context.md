@@ -54,8 +54,7 @@ Override with `KimssClient(..., base_url=...)` or `KIMSS_BASE_URL` for MCP.
 | `KimssClient.agents.run(..., stream=False)` | `POST /v1/agents/run` | **Preferred** non-streaming agent run; returns **`AgentRunResult`** (dict + **`.text`**, **`.usage.total_credits`**, **`.conversation_id`**) when `res` is a dict. Aliases **`agent_id`/`prompt`**; optional **`conversation_id`** (JSON `thread_id`), **`tags`**, **`routing_preference`** |
 | `KimssClient.models.create(..., stream=False)` | `POST /v1/models/completions` | Non-streaming completions (`{"res": ...}` envelope). Optional client ``agent_id`` / env ``KIMSS_AGENT_ID`` → ``X-Kimss-Agent-Id`` (telemetry + kill switch). |
 | `KimssClient.images.generate` | `POST /v1/images/generations` | OpenAI-compatible image gen (`data[].b64_json`); feature-gated — 404 `feature_disabled` when off |
-| `KimssClient.files.upload` | `POST /v1/files/upload` | Multipart `file` |
-| `KimssClient.vector_stores.create` | `POST /v1/vector_stores/create` | Optional `agent_id` links store to agent |
+| `KimssClient.files.upload` | `POST /v1/files/upload` | Multipart `file` (ephemeral attachments, not RAG) |
 | *(OpenAI clients / OmniRoute / Cursor)* | `GET /v1/models` | OpenAI list; `id` = `logical_id` when set (e.g. `gpt-5.6-sol`) |
 | *(OpenAI clients / OmniRoute / Cursor)* | `POST /v1/chat/completions` | Bare OpenAI `chat.completion` / chunk SSE; auth `Bearer kimss_...` or `X-Kimss-Key` |
 
@@ -106,7 +105,6 @@ Install: `pip install 'kimss[mcp]'`. Run: `kimss-mcp-server` with `KIMSS_API_KEY
 | `kimss_run_agent` | `POST /v1/agents/run` (non-stream) |
 | `kimss_complete` | `POST /v1/models/completions` (non-stream) |
 | `kimss_upload_file` | `POST /v1/files/upload` |
-| `kimss_create_vector_store` | `POST /v1/vector_stores/create` |
 | `kimss_add_function_to_agent` | `POST /agent_add_function/` |
 
 On Kimss API errors, tools raise **RuntimeError** whose message is a JSON string: `{"kind":"kimss_api_error","http_status",...}` — parse for defensive handling.

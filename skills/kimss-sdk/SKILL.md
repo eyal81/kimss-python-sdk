@@ -55,10 +55,9 @@ Aliases: `agent_id` / `prompt`. JSON wire uses `thread_id` for the conversation 
 
 `client.models.create(model=..., messages=[...], stream=False)` → `POST /v1/models/completions`.
 
-## Files and vector stores
+## Files
 
-- `client.files.upload(path, ...)` → multipart `POST /v1/files/upload`.
-- `client.vector_stores.create(name=..., agent_id=...)` → `POST /v1/vector_stores/create`.
+- `client.files.upload(path, ...)` → multipart `POST /v1/files/upload` (ephemeral attachments; Kimss does not host RAG).
 
 ## Function tools (owned agents only)
 

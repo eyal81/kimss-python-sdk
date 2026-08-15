@@ -69,7 +69,6 @@ After `pip install 'kimss[mcp]'`:
 | `kimss_create_agent` | `POST /v1/agents/create` (management-scoped key) |
 | `kimss_complete` | `POST /v1/models/completions` |
 | `kimss_upload_file` | `POST /v1/files/upload` |
-| `kimss_create_vector_store` | `POST /v1/vector_stores/create` |
 | `kimss_add_function_to_agent` | `POST /agent_add_function/` |
 
 Argument JSON schemas are defined in `kimss/mcp/tools.py` (`TOOL_INPUT_SCHEMAS`).

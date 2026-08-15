@@ -80,20 +80,6 @@ TOOL_INPUT_SCHEMAS: dict[str, dict[str, Any]] = {
         "required": ["path"],
         "additionalProperties": False,
     },
-    "kimss_create_vector_store": {
-        "type": "object",
-        "properties": {
-            "name": {"type": "string"},
-            "agent_id": {
-                "type": "string",
-                "description": "Link store to agent (replace semantics)",
-            },
-            "metadata": {"type": "object"},
-            "tenant_id": {"type": "string"},
-        },
-        "required": [],
-        "additionalProperties": False,
-    },
     "kimss_add_function_to_agent": {
         "type": "object",
         "properties": {
@@ -191,21 +177,6 @@ def kimss_upload_file(
     content_type: str = "application/octet-stream",
 ) -> Any:
     return client.files.upload(path, filename=filename, content_type=content_type)
-
-
-def kimss_create_vector_store(
-    client: KimssClient,
-    name: str | None = None,
-    agent_id: str | None = None,
-    metadata: dict[str, Any] | None = None,
-    tenant_id: str | None = None,
-) -> Any:
-    return client.vector_stores.create(
-        name=name,
-        agent_id=agent_id,
-        metadata=metadata,
-        tenant_id=tenant_id,
-    )
 
 
 def kimss_add_function_to_agent(

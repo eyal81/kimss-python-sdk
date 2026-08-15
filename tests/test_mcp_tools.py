@@ -34,7 +34,6 @@ def test_tool_schemas_accept_sample_payloads() -> None:
             "messages": [{"role": "user", "content": "x"}],
         },
         "kimss_upload_file": {"path": "/tmp/x.txt"},
-        "kimss_create_vector_store": {},
         "kimss_add_function_to_agent": {"agent_id": "asst_1", "name": "fn1"},
     }
     for name, payload in samples.items():
