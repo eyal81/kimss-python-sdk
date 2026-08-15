@@ -64,7 +64,7 @@ After `pip install 'kimss[mcp]'`:
 
 | Tool | Backend (summary) |
 |------|-------------------|
-| `kimss_chat` | `POST /assistant_chat/` |
+| `kimss_chat` | `POST /v1/agents/run` |
 | `kimss_run_agent` | `POST /v1/agents/run` |
 | `kimss_create_agent` | `POST /v1/agents/create` (management-scoped key) |
 | `kimss_complete` | `POST /v1/models/completions` |

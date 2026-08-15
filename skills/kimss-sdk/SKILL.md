@@ -49,7 +49,7 @@ Aliases: `agent_id` / `prompt`. JSON wire uses `thread_id` for the conversation 
 
 ## Legacy chat
 
-`client.chat(...)` or `client.get_agent(id).query(...)` → `POST /assistant_chat/`. Same `conversation_id` / `thread_id` pattern.
+`client.chat(...)` or `client.get_agent(id).query(...)` → `POST /v1/agents/run`. Same `conversation_id` / `thread_id` pattern.
 
 ## Models
 

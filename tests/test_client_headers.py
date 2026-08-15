@@ -14,7 +14,7 @@ from kimss import KimssClient
 def test_api_key_sets_x_kimss_key() -> None:
     responses.add(
         responses.POST,
-        "https://api.kimss.ai/assistant_chat/",
+        "https://api.kimss.ai/v1/agents/run",
         json={"res": {"ok": True}},
         status=200,
     )
@@ -28,7 +28,7 @@ def test_api_key_sets_x_kimss_key() -> None:
 def test_workspace_id_header_and_tenant_id_body() -> None:
     responses.add(
         responses.POST,
-        "https://api.kimss.ai/assistant_chat/",
+        "https://api.kimss.ai/v1/agents/run",
         json={"res": {}},
         status=200,
     )
@@ -51,7 +51,7 @@ def test_workspace_id_header_and_tenant_id_body() -> None:
 def test_agent_id_sets_x_kimss_agent_id() -> None:
     responses.add(
         responses.POST,
-        "https://api.kimss.ai/assistant_chat/",
+        "https://api.kimss.ai/v1/agents/run",
         json={"res": {}},
         status=200,
     )

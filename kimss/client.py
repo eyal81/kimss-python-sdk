@@ -216,9 +216,8 @@ class KimssClient:
         Send a message to an assistant and return the response.
         Same as get_agent(assistant_id).query(message, conversation_id=...).
 
-        The Kimss HTTP API still uses the JSON field ``thread_id`` for the
-        Foundry **conversation** id; the SDK maps ``conversation_id`` to that
-        field for clarity (v2+).
+        The Kimss HTTP API uses the JSON field ``thread_id`` for the
+        conversation id; the SDK maps ``conversation_id`` to that field.
         """
         return self.get_agent(assistant_id).query(
             message, conversation_id=conversation_id, chat_type=chat_type
@@ -260,22 +259,17 @@ class Agent:
         chat_type: str = "user_chat",
     ) -> Dict[str, Any]:
         """
-        Send a message to this agent and return the API response (res payload).
+        Send a message to this agent via ``POST /v1/agents/run``.
 
-        ``conversation_id`` continues the same Foundry conversation as the
-        previous turn (Kimss JSON field ``thread_id`` on the wire).
+        ``conversation_id`` continues the same conversation as the previous
+        turn (Kimss JSON field ``thread_id`` on the wire).
         """
-        payload: Dict[str, Any] = {
-            "assistant_id": self.id,
-            "usr_chat": message,
-            "chat_type": chat_type,
-        }
-        if conversation_id is not None and str(conversation_id).strip():
-            payload["thread_id"] = str(conversation_id).strip()
-        response = self._client._post_json("/assistant_chat/", payload, timeout=120)
-        raise_for_kimss_error(response)
-        data = response.json()
-        return data.get("res", data)
+        result = self.run(
+            message,
+            conversation_id=conversation_id,
+            chat_type=chat_type,
+        )
+        return result
 
     def run(
         self,

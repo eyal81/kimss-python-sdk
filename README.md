@@ -190,7 +190,7 @@ print(result_v1.text, result_v1.usage.total_credits, result_v1.conversation_id)
 
 - **`KimssClient(..., retry=None)`** – authenticated client. Provide either `api_key` (uses `X-Kimss-Key`) or `credential` + `token_scope` (uses `Authorization: Bearer`). `workspace_id` optionally stamps `X-Workspace-ID` and `tenant_id` for isolated worker telemetry. Uses a `requests.Session` with **retry on 5xx** (not 429) and **Retry-After** by default so credit exhaustion and rate limits surface immediately as typed errors (`KimssCreditExhausted`, `KimssRateLimited`, `KimssSubscriptionRequired`).
 - **`client.get_agent(agent_id)`** / **`client.agents.get(agent_id)`** – returns an `Agent`. **`Agent.run`** calls `POST /v1/agents/run`.
-- **`agent.query(message, conversation_id=None, chat_type="user_chat")`** – send a message; returns the `res` object from `POST /assistant_chat/`.
+- **`agent.query(message, conversation_id=None, chat_type="user_chat")`** – send a message via `POST /v1/agents/run` (same as **`Agent.run`**).
 - **`client.chat(assistant_id, message, conversation_id=None, chat_type="user_chat")`** – one-off chat without an Agent handle.
 - **`client.agents.create` / `client.agents.run`** – v1 agent management and orchestration (`/v1/agents/create`, `/v1/agents/run`). **`agents.run`** accepts positionals `(assistant_id, message)`, keyword aliases **`agent_id` / `prompt`**, optional **`conversation_id`** (maps to JSON `thread_id`), optional **`tags`** and **`routing_preference`**; **`stream=False`** returns **`AgentRunResult`** (dict subclass with **`.text`**, **`.usage.total_credits`**, **`.conversation_id`**) when `res` is a dict.
 - **`client.models.create`** – `/v1/models/completions` (Kimss `{"res": ...}` envelope).

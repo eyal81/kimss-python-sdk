@@ -45,7 +45,7 @@ Override with `KimssClient(..., base_url=...)` or `KIMSS_BASE_URL` for MCP.
 
 | SDK surface | HTTP | Notes |
 |-------------|------|-------|
-| `KimssClient.chat` / `Agent.query` | `POST /assistant_chat/` | Body: `assistant_id`, `usr_chat`, `chat_type`; optional **`thread_id`** (Foundry **conversation** id). SDK kwarg: **`conversation_id`**. Prefer **`agents.run`** for new code. |
+| `KimssClient.chat` / `Agent.query` | `POST /v1/agents/run` | Same route as **`agents.run`**. Body: `assistant_id`, `usr_chat`, `chat_type`; optional **`thread_id`**. SDK kwarg: **`conversation_id`**. |
 | `KimssClient.add_function_to_agent` / `Agent.add_function` | `POST /agent_add_function/` | `assistant_id`, `name`, `description`, `parameters` (JSON Schema object) |
 | `KimssClient.agents.create` | `POST /v1/agents/create` | Management; requires privileged key |
 | `KimssClient.agents.register` | `POST /v1/agents/register` | Register a customer-owned agent (inventory only; management scope) |
@@ -101,7 +101,7 @@ Install: `pip install 'kimss[mcp]'`. Run: `kimss-mcp-server` with `KIMSS_API_KEY
 
 | Tool | Purpose |
 |------|---------|
-| `kimss_chat` | `POST /assistant_chat/` |
+| `kimss_chat` | `POST /v1/agents/run` |
 | `kimss_create_agent` | `POST /v1/agents/create` |
 | `kimss_run_agent` | `POST /v1/agents/run` (non-stream) |
 | `kimss_complete` | `POST /v1/models/completions` (non-stream) |
