@@ -721,7 +721,7 @@ class AgentsRunV1:
         tools: Optional[List[Dict[str, Any]]] = None,
         tenant_id: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """Create a Foundry-backed Kimss agent and return its ``res`` payload."""
+        """Create a Kimss registry agent (Hermis). ``model`` must be a vaulted ``custom:*`` endpoint."""
         payload: Dict[str, Any] = {"name": (name or "").strip()}
         if not payload["name"]:
             raise ValueError("agents.create requires a non-empty name")
