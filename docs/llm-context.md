@@ -75,7 +75,7 @@ Same Foundry deployments and credit pool as `/v1/models/completions`. Do **not**
 1. **First message**: call `agents.run("asst_id", "hello", stream=False)` (or `chat` / `query`) with **no** `conversation_id`.
 2. **Response** includes the Foundry conversation id in `res`, typically under **`thread_id`** until the API is renamed; the SDK exposes it as **`AgentRunResult.conversation_id`** for `/v1/agents/run`.
 3. **Follow-up**: pass the same id as **`conversation_id`** on the next SDK call (serialized as JSON **`thread_id`**).
-4. **Attachments / knowledge**: upload via `files.upload`, attach via vector store `create(..., agent_id=...)` per your workspace workflow.
+4. **Ephemeral attachments**: upload via `files.upload` (`POST /v1/files/upload`) for a single chat/completion turn (vision / document parse). Kimss does **not** host vector stores or RAG indexes — retrieve on your side and pass augmented messages through the gateway. Hosted `/v1/vector_stores/*` returns **410** `rag_deprecated`.
 
 ## Error code dictionary (typed SDK exceptions)
 

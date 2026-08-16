@@ -1,13 +1,13 @@
 ---
 name: kimss-sdk
-description: Build and debug integrations with the Kimss Python SDK — clients, agents.run, models, files, vector stores, function tools, streaming, and errors.
+description: Build and debug integrations with the Kimss Python SDK — clients, agents.run, models, ephemeral file upload, function tools, streaming, and errors.
 ---
 
 # Kimss Python SDK
 
 ## When to use
 
-- Writing or reviewing Python that calls Kimss (agents, models, files, vector stores).
+- Writing or reviewing Python that calls Kimss (agents, models, ephemeral file upload).
 - Choosing between `agents.run`, `chat` / `Agent.query`, and MCP tools.
 - Handling credits, rate limits, subscriptions, and conversation threading.
 

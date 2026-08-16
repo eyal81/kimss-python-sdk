@@ -43,7 +43,7 @@ def build_mcp() -> Any:
         "kimss",
         instructions=(
             "Kimss API tools: chat, create/run agents, model completions, "
-            "file upload, vector stores, function tools. Requires KIMSS_API_KEY."
+            "ephemeral file upload, function tools. Requires KIMSS_API_KEY."
         ),
     )
 

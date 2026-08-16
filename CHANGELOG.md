@@ -2,6 +2,12 @@
 
 All notable changes to the **kimss** PyPI package are documented here. The canonical source for this file in development is the monorepo path `kimss_sdk/CHANGELOG.md`.
 
+## [2.0.2] — 2026-08-16
+
+### Changed
+
+- Docs and MCP server description no longer mention hosted vector stores. File upload is ephemeral (single-turn attachments). Hosted RAG routes return HTTP 410.
+
 ## [2.0.1] — 2026-07-24
 
 ### Fixed
