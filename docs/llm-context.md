@@ -84,6 +84,7 @@ Errors are raised via `raise_for_kimss_error` into subclasses of `KimssApiError`
 | HTTP | `detail.error` | Exception | Meaning / assistant behavior |
 |------|----------------|-----------|------------------------------|
 | 403 | `subscription_required` | `KimssSubscriptionRequired` | Workspace needs paid entitlement — do not retry; tell the user to upgrade or switch workspace. |
+| 429 | `governed_requests_exhausted` | `KimssGovernedRequestsExhausted` | Monthly governed-request allowance reached (free tier: 25,000/mo) — do not tight-loop retry; meter resets next month; suggest upgrade. `detail` has `used`, `included`, `year_month`. |
 | 429 | `credit_pool_exhausted` | `KimssCreditExhausted` | Monthly pool exhausted — do not tight-loop retry; surface to user; backoff hours/days. |
 | 429 | `individual_free_trial_exhausted` | `KimssCreditExhausted` | Trial cap hit — same as above. |
 | 429 | `credit_policy_blocked` | `KimssCreditExhausted` | Policy blocked usage — surface `detail`; no blind retry. |

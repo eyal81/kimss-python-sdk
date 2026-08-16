@@ -3,7 +3,13 @@
 [![PyPI](https://img.shields.io/pypi/v/kimss.svg)](https://pypi.org/project/kimss/)
 [![Python](https://img.shields.io/pypi/pyversions/kimss.svg)](https://pypi.org/project/kimss/)
 
-Lightweight client for the [Kimss](https://kimss.ai) API — call agents, run model completions, upload files, and manage vector stores from Python. Optional **Model Context Protocol (MCP)** server for **Cursor**, **Windsurf**, **Claude Desktop**, and other MCP-capable clients.
+Your AI traffic is probably unmanaged: provider keys hardcoded in `.env` files, scripts calling models directly, no record of who made which call and no way to stop the next one. That is **Shadow AI**.
+
+[Kimss](https://kimss.ai) is an **Enterprise Agent Control Plane** — a zero-trust gateway that sits in front of the model endpoints you already own. This SDK is the integration layer: it routes your Python calls through the Kimss gateway (`X-Kimss-Key`), where every request gets identity, a governed audit trail, and a kill switch. Kimss never hosts your models and never charges for inference compute.
+
+Includes an optional **Model Context Protocol (MCP)** server for **Cursor**, **Windsurf**, **Claude Desktop**, and other MCP-capable clients.
+
+**New here?** The 5-minute tutorial lives at [eyal81/kimss-python-quickstart](https://github.com/eyal81/kimss-python-quickstart).
 
 **AI assistants:** read [docs/llm-context.md](docs/llm-context.md) or the repo root [.llms.txt](.llms.txt) for dense integration context.
 
@@ -120,6 +126,10 @@ Legacy Desktop Extension metadata for MCP bundles lives under [`mcpb/manifest.js
 pip install kimss
 ```
 
+> **To route traffic, you must create a free control plane namespace. [Get your API key at kimss.ai](https://kimss.ai/app/signup) (25,000 governed requests/mo included. No credit card).**
+>
+> The Developer tier is always free — 25,000 governed requests/month, 14-day telemetry retention, no expiration cliff.
+
 Optional **PII redaction** (Microsoft Presidio + spaCy; e.g. `python -m spacy download en_core_web_lg`):
 
 ```bash
@@ -188,7 +198,7 @@ print(result_v1.text, result_v1.usage.total_credits, result_v1.conversation_id)
 
 ## API
 
-- **`KimssClient(..., retry=None)`** – authenticated client. Provide either `api_key` (uses `X-Kimss-Key`) or `credential` + `token_scope` (uses `Authorization: Bearer`). `workspace_id` optionally stamps `X-Workspace-ID` and `tenant_id` for isolated worker telemetry. Uses a `requests.Session` with **retry on 5xx** (not 429) and **Retry-After** by default so credit exhaustion and rate limits surface immediately as typed errors (`KimssCreditExhausted`, `KimssRateLimited`, `KimssSubscriptionRequired`).
+- **`KimssClient(..., retry=None)`** – authenticated client. Provide either `api_key` (uses `X-Kimss-Key`) or `credential` + `token_scope` (uses `Authorization: Bearer`). `workspace_id` optionally stamps `X-Workspace-ID` and `tenant_id` for isolated worker telemetry. Uses a `requests.Session` with **retry on 5xx** (not 429) and **Retry-After** by default so allowance exhaustion and rate limits surface immediately as typed errors (`KimssGovernedRequestsExhausted` for the monthly governed-request cap, `KimssCreditExhausted`, `KimssRateLimited`, `KimssSubscriptionRequired`).
 - **`client.get_agent(agent_id)`** / **`client.agents.get(agent_id)`** – returns an `Agent`. **`Agent.run`** calls `POST /v1/agents/run`.
 - **`agent.query(message, conversation_id=None, chat_type="user_chat")`** – send a message via `POST /v1/agents/run` (same as **`Agent.run`**).
 - **`client.chat(assistant_id, message, conversation_id=None, chat_type="user_chat")`** – one-off chat without an Agent handle.
@@ -214,7 +224,7 @@ API-key requests use the `X-Kimss-Key` header. Credential requests use
 
 ## Examples
 
-See [examples/](examples/) — set `KIMSS_API_KEY` (and `KIMSS_ASSISTANT_ID` / `KIMSS_MODEL` where noted).
+See [examples/](examples/) — set `KIMSS_API_KEY` (and `KIMSS_ASSISTANT_ID` / `KIMSS_MODEL` where noted). For the guided route-your-first-governed-call walkthrough, use [eyal81/kimss-python-quickstart](https://github.com/eyal81/kimss-python-quickstart).
 
 ## Usage Hub (execution context)
 

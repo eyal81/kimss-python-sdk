@@ -29,6 +29,14 @@ class KimssCreditExhausted(KimssApiError):
     """Monthly credit pool or individual trial cap exhausted (HTTP 429)."""
 
 
+class KimssGovernedRequestsExhausted(KimssApiError):
+    """Monthly governed-request allowance reached for the workspace (HTTP 429).
+
+    Free tier includes 25,000 governed requests per month. ``detail`` carries
+    ``used``, ``included``, and ``year_month`` so callers can surface the meter.
+    """
+
+
 class KimssSubscriptionRequired(KimssApiError):
     """Workspace lacks paid entitlement (HTTP 403)."""
 
@@ -72,6 +80,11 @@ def raise_for_kimss_error(response: requests.Response) -> None:
         raise KimssSubscriptionRequired(msg, response=response, error_code=err, detail=detail)
 
     if response.status_code == 429:
+        if err == "governed_requests_exhausted":
+            msg = str((detail or {}).get("message") or "governed_requests_exhausted")
+            raise KimssGovernedRequestsExhausted(
+                msg, response=response, error_code=err, detail=detail
+            )
         if err in ("credit_pool_exhausted", "individual_free_trial_exhausted", "credit_policy_blocked"):
             msg = str((detail or {}).get("message") or err or "credit exhausted")
             raise KimssCreditExhausted(msg, response=response, error_code=err or None, detail=detail)
