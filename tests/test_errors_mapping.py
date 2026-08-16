@@ -6,6 +6,7 @@ import requests
 
 from kimss.errors import (
     KimssCreditExhausted,
+    KimssGovernedRequestsExhausted,
     KimssRateLimited,
     KimssSubscriptionRequired,
     raise_for_kimss_error,
@@ -28,6 +29,25 @@ def test_subscription_required_403() -> None:
     with pytest.raises(KimssSubscriptionRequired) as ei:
         raise_for_kimss_error(r)
     assert ei.value.error_code == "subscription_required"
+
+
+def test_governed_requests_exhausted_429() -> None:
+    r = _resp(
+        429,
+        {
+            "detail": {
+                "error": "governed_requests_exhausted",
+                "message": "Governed-request allowance reached (25000/25000 this month).",
+                "used": 25000,
+                "included": 25000,
+                "year_month": "2026-08",
+            }
+        },
+    )
+    with pytest.raises(KimssGovernedRequestsExhausted) as ei:
+        raise_for_kimss_error(r)
+    assert ei.value.error_code == "governed_requests_exhausted"
+    assert ei.value.detail["included"] == 25000
 
 
 def test_credit_pool_exhausted_429() -> None:
