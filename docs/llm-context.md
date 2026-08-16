@@ -11,7 +11,7 @@ This file is optimized for AI assistants (Cursor, Windsurf, Claude Desktop, Copi
 3. Set env: `KIMSS_API_KEY` (required). Optional: `KIMSS_BASE_URL` (default `https://api.kimss.ai`).
 4. Preferred first call: `client.agents.get(assistant_id).run("Hello!", stream=False)` or `client.agents.run(assistant_id, "Hello!", stream=False)` → `POST /v1/agents/run`.
 5. Auth header for API keys: **`X-Kimss-Key`** — never `Authorization: Bearer` for Kimss API keys.
-6. Java customers: JDK 11+ `HttpClient` + `X-Kimss-Key`, or Maven `com.kimss:kimss-java` when published. No Node SDK — use `fetch` + `X-Kimss-Key`.
+6. Java customers: JDK 11+ `HttpClient` + `X-Kimss-Key`, or Maven `ai.kimss:kimss-java` when published. No Node SDK — use `fetch` + `X-Kimss-Key`.
 
 ## Authentication
 
