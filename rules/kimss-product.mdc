@@ -34,6 +34,7 @@ Do **not** document or recommend raw cloud provider URLs (e.g. `*.azurewebsites.
 
 ## Dense context for assistants
 
+- [docs/KIMSS_ONBOARDING.md](docs/KIMSS_ONBOARDING.md) — refactor existing OpenAI clients to the gateway.
 - [docs/llm-context.md](docs/llm-context.md) and repo root [.llms.txt](.llms.txt) — SDK ↔ HTTP map, MCP tool list, error dictionary.
 
 ## MCP server (stdio)

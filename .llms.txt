@@ -3,6 +3,8 @@ Kimss Python SDK and MCP server for Kimss (https://kimss.ai).
 
 - Requires Python 3.10+ (MCP extra aligns with the official `mcp` package).
 - Human README: README.md
+- Getting started: GETTING_STARTED.md
+- Agent refactor spec: docs/KIMSS_ONBOARDING.md
 - Dense AI / IDE context: docs/llm-context.md
 - MCP stdio entrypoint: `kimss-mcp-server` (after `pip install 'kimss[mcp]'`); also `uvx --from kimss[mcp] kimss-mcp-server`
 - MCP clients: Cursor, Windsurf, Claude Desktop (`claude_desktop_config.json`)

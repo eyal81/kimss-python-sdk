@@ -7,7 +7,34 @@
 
 Your AI traffic is probably unmanaged: provider keys hardcoded in `.env` files, scripts calling models directly, no record of who made which call and no way to stop the next one. That is **Shadow AI**.
 
-[Kimss](https://kimss.ai) is an **Enterprise Agent Control Plane** — a zero-trust gateway that sits in front of the model endpoints you already own. This SDK is the integration layer: it routes your Python calls through the Kimss gateway (`X-Kimss-Key`), where every request gets identity, a governed audit trail, and a kill switch. Kimss never hosts your models and never charges for inference compute.
+[Kimss](https://kimss.ai) is a **Secure AI Gateway** and **Governance Control Plane** that sits in front of the model endpoints you already own. This SDK is the integration layer: it routes your Python calls through the Kimss gateway (`X-Kimss-Key`), where every request gets identity, a governed audit trail, and a kill switch. Kimss never hosts your models and never charges for inference compute.
+
+**30-second drop-in** (no Kimss SDK required):
+
+```python
+from openai import OpenAI
+client = OpenAI(api_key="kimss_...", base_url="https://api.kimss.ai/v1")
+```
+
+Or zero-code:
+
+```bash
+OPENAI_BASE_URL="https://api.kimss.ai/v1"
+OPENAI_API_KEY="kimss_..."
+```
+
+**Developer tier (Always Free):** 25,000 governed requests/month, 14-day telemetry, 5 builder & admin seats. No credit card. [Get a key](https://kimss.ai/app/signup).
+
+| Inbound (your app → Kimss) | Vaulted BYO (Kimss → your provider) |
+|----------------------------|-------------------------------------|
+| OpenAI Python/JS/Java clients at `https://api.kimss.ai/v1` | OpenAI, Azure AI Foundry / Azure OpenAI, Anthropic Messages, DeepSeek, custom vLLM |
+| Native `KimssClient` at `https://api.kimss.ai` | Internal MCP servers (Control Plane registration) |
+
+Official Anthropic and Azure OpenAI SDKs are **not** inbound drop-ins. Vault those providers, then call `/v1` or this SDK.
+
+**New here?** [GETTING_STARTED.md](GETTING_STARTED.md) · 5-minute tutorial: [eyal81/kimss-python-quickstart](https://github.com/eyal81/kimss-python-quickstart).
+
+**AI assistants:** [docs/KIMSS_ONBOARDING.md](docs/KIMSS_ONBOARDING.md), [docs/llm-context.md](docs/llm-context.md), [CLAUDE.md](CLAUDE.md).
 
 ```mermaid
 flowchart LR
@@ -18,9 +45,7 @@ flowchart LR
 
 Includes an optional **Model Context Protocol (MCP)** server for **Cursor**, **Windsurf**, **Claude Desktop**, and other MCP-capable clients.
 
-**New here?** The 5-minute tutorial lives at [eyal81/kimss-python-quickstart](https://github.com/eyal81/kimss-python-quickstart).
-
-**AI assistants:** read [docs/llm-context.md](docs/llm-context.md) or the repo root [.llms.txt](.llms.txt) for dense integration context.
+**AI assistants (dense HTTP map):** [.llms.txt](.llms.txt).
 
 ## Cursor Marketplace plugin
 

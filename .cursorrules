@@ -1,0 +1,10 @@
+# Kimss Python SDK
+
+When asked to integrate Kimss, follow docs/KIMSS_ONBOARDING.md.
+
+- OpenAI drop-in: base_url https://api.kimss.ai/v1, api_key kimss_... (OPENAI_BASE_URL / OPENAI_API_KEY).
+- Native KimssClient: base_url https://api.kimss.ai, X-Kimss-Key. Prefer client.agents.get(id).run(...) or client.agents.run(id, ...).
+- Do not point Anthropic or Azure OpenAI official clients at api.kimss.ai inbound paths.
+- Leave model payloads and tools unchanged unless requested.
+- Kill switch code: agent_disabled. Positioning: Secure AI Gateway & Governance Control Plane. Never "zero-trust".
+- Keys are kimss_..., never km_live_...

@@ -1,4 +1,4 @@
-"""Kimss Python SDK – integration layer for the Kimss zero-trust agent gateway."""
+"""Kimss Python SDK – integration layer for the Kimss Secure AI Gateway."""
 from .client import Agent, AgentRunResult, AgentRunUsage, KimssClient
 from .environment import KimssEnv, current_env, env_label, is_staging, redis_cache_namespace_infix
 from .errors import (

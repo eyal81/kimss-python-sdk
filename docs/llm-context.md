@@ -1,6 +1,6 @@
 # Kimss Python SDK — LLM / IDE context
 
-This file is optimized for AI assistants (Cursor, Windsurf, Claude Desktop, Copilot). Pair with the human-oriented [README.md](../README.md).
+This file is optimized for AI assistants (Cursor, Windsurf, Claude Desktop, Copilot). Pair with the human-oriented [README.md](../README.md) and the refactor spec [KIMSS_ONBOARDING.md](KIMSS_ONBOARDING.md).
 
 ## Clean machine checklist (do this first)
 
