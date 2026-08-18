@@ -2,7 +2,7 @@
 
 Route existing OpenAI-compatible traffic through Kimss in about five minutes. Kimss is the **Secure AI Gateway** and **Governance Control Plane**: identity, audit, kill switch, and a provider vault. You bring the models (**BYOI**). Kimss does not host inference and does not charge for compute.
 
-**Developer tier (Always Free):** 25,000 governed requests/month, 14-day telemetry retention, 5 builder & admin seats. No credit card.
+**Developer tier (Always Free):** 25,000 governed requests/month, 14-day telemetry retention, up to 5 workspace members. No credit card.
 
 ## Step 1 — Vault provider keys
 
