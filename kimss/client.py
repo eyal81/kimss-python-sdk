@@ -672,6 +672,7 @@ class AgentsRunV1:
         self,
         *,
         name: str,
+        agent_id: Optional[str] = None,
         framework: Optional[str] = None,
         models: Optional[List[str]] = None,
         description: Optional[str] = None,
@@ -681,15 +682,19 @@ class AgentsRunV1:
         endpoint_url: Optional[str] = None,
         external_ref: Optional[str] = None,
         tenant_id: Optional[str] = None,
+        governance: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Register a customer-owned (external) agent in the Kimss inventory.
 
         Does not create a Foundry-hosted agent. Requires a **management** API key
-        scope. Returns ``{"agent_id": "ext-...", "origin": "external", ...}``.
+        scope. Pass ``agent_id`` to match ``X-Kimss-Agent-Id`` in code; otherwise
+        Kimss generates ``ext-...``. Returns ``{"agent_id": "...", "origin": "external", ...}``.
         """
         payload: Dict[str, Any] = {"name": (name or "").strip()}
         if not payload["name"]:
             raise ValueError("agents.register requires a non-empty name")
+        if agent_id is not None and str(agent_id).strip():
+            payload["agent_id"] = str(agent_id).strip()
         if framework is not None and str(framework).strip():
             payload["framework"] = str(framework).strip()
         if models is not None:
@@ -708,6 +713,8 @@ class AgentsRunV1:
             payload["external_ref"] = str(external_ref).strip()
         if tenant_id is not None and str(tenant_id).strip():
             payload["tenant_id"] = str(tenant_id).strip()
+        if governance:
+            payload["governance"] = governance
         r = self._client._post_json("/v1/agents/register", payload, timeout=60)
         raise_for_kimss_error(r)
         body = r.json()

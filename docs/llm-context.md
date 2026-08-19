@@ -48,7 +48,7 @@ Override with `KimssClient(..., base_url=...)` or `KIMSS_BASE_URL` for MCP.
 | `KimssClient.chat` / `Agent.query` | `POST /v1/agents/run` | Same route as **`agents.run`**. Body: `assistant_id`, `usr_chat`, `chat_type`; optional **`thread_id`**. SDK kwarg: **`conversation_id`**. |
 | `KimssClient.add_function_to_agent` / `Agent.add_function` | `POST /agent_add_function/` | `assistant_id`, `name`, `description`, `parameters` (JSON Schema object) |
 | `KimssClient.agents.create` | `POST /v1/agents/create` | Management; requires privileged key |
-| `KimssClient.agents.register` | `POST /v1/agents/register` | Register a customer-owned agent (inventory only; management scope) |
+| `KimssClient.agents.register` | `POST /v1/agents/register` | Inventory only; management scope. Optional ``agent_id`` (must match ``X-Kimss-Agent-Id``) and ``governance`` policies. |
 | `KimssClient.usage.report` | `POST /v1/usage/events` | Self-reported BYO token usage (run scope). Prefer `stream_options.include_usage` on the customer's LLM client. |
 | `KimssClient.agents.get` / `Agent.run` | `POST /v1/agents/run` | Local handle; `run` is the preferred call |
 | `KimssClient.agents.run(..., stream=False)` | `POST /v1/agents/run` | **Preferred** non-streaming agent run; returns **`AgentRunResult`** (dict + **`.text`**, **`.usage.total_credits`**, **`.conversation_id`**) when `res` is a dict. Aliases **`agent_id`/`prompt`**; optional **`conversation_id`** (JSON `thread_id`), **`tags`**, **`routing_preference`** |
