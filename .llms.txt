@@ -1,11 +1,10 @@
 # kimss
-Kimss Python SDK and MCP server for Kimss (https://kimss.ai).
+Kimss Secure AI Gateway + Governance Control Plane (https://kimss.ai).
 
-- Requires Python 3.10+ (MCP extra aligns with the official `mcp` package).
-- Human README: README.md
+- AI assistants: AI_INTEGRATION.md (mandatory)
+- Human README: README.md — gateway proxy first (OpenAI base_url + X-Kimss-Agent-Id)
 - Getting started: GETTING_STARTED.md
-- Agent refactor spec: docs/KIMSS_ONBOARDING.md
-- Dense AI / IDE context: docs/llm-context.md
-- MCP stdio entrypoint: `kimss-mcp-server` (after `pip install 'kimss[mcp]'`); also `uvx --from kimss[mcp] kimss-mcp-server`
-- MCP clients: Cursor, Windsurf, Claude Desktop (`claude_desktop_config.json`)
-- v1 **`KimssClient.agents.run`**: positionals `(assistant_id, message)` or **`agent_id`/`prompt`**; optional **`tags`**, **`routing_preference`**; **`stream=False`** → **`AgentRunResult`** with **`.text`** and **`.usage.total_credits`** when `res` is a dict.
+- Dense map: docs/llm-context.md
+- Inference: official openai package → https://api.kimss.ai/v1 (KimssClient chat/agents.run/models.create are DEPRECATED)
+- Control plane package `kimss`: agents.register, usage.report; kill switch / audit / MCP via REST + Governance UI
+- Optional MCP: kimss-mcp-server (inference MCP tools deprecated)

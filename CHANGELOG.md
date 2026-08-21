@@ -2,6 +2,16 @@
 
 All notable changes to the **kimss** PyPI package are documented here. The canonical source for this file in development is the monorepo path `kimss_sdk/CHANGELOG.md`.
 
+## [2.1.0] — 2026-08-21
+
+### Deprecated
+
+- **Inference wrappers:** `KimssClient.chat`, `Agent.query` / `Agent.run`, `agents.run`, `models.create`, `images.generate`, and MCP tools `kimss_chat` / `kimss_run_agent` / `kimss_complete` emit `DeprecationWarning`. Prefer the official OpenAI SDK with `base_url=https://api.kimss.ai/v1` and `X-Kimss-Agent-Id` headers ([AI_INTEGRATION.md](AI_INTEGRATION.md)).
+
+### Changed
+
+- Package repositioned as a **control-plane / DevOps** client (`agents.register`, `usage.report`). Docs and A2A files lead with the gateway proxy pattern.
+
 ## [2.0.2] — 2026-08-16
 
 ### Changed

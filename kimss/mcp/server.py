@@ -42,8 +42,9 @@ def build_mcp() -> Any:
     mcp = FastMCP(
         "kimss",
         instructions=(
-            "Kimss API tools: chat, create/run agents, model completions, "
-            "ephemeral file upload, function tools. Requires KIMSS_API_KEY."
+            "Kimss control-plane / legacy tools. Prefer OpenAI base_url=https://api.kimss.ai/v1 "
+            "with X-Kimss-Agent-Id for inference. kimss_chat, kimss_run_agent, and kimss_complete "
+            "are deprecated. Requires KIMSS_API_KEY."
         ),
     )
 
@@ -53,7 +54,14 @@ def build_mcp() -> Any:
         message: str,
         conversation_id: str | None = None,
     ) -> Any:
-        """Send a user message (POST /assistant_chat/). Returns API ``res`` payload."""
+        """DEPRECATED. Prefer OpenAI gateway. Legacy: POST /v1/agents/run. Returns API ``res``."""
+        import warnings
+
+        warnings.warn(
+            "kimss_chat is deprecated; use OpenAI base_url=https://api.kimss.ai/v1 with X-Kimss-Agent-Id",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return _run_tool(
             mcp_tools.kimss_chat,
             assistant_id=assistant_id,
@@ -90,7 +98,14 @@ def build_mcp() -> Any:
         conversation_id: str | None = None,
         chat_type: str = "user_chat",
     ) -> Any:
-        """Run an agent turn (POST /v1/agents/run), non-streaming only."""
+        """DEPRECATED. Prefer OpenAI gateway. Legacy: POST /v1/agents/run (non-streaming)."""
+        import warnings
+
+        warnings.warn(
+            "kimss_run_agent is deprecated; use OpenAI base_url=https://api.kimss.ai/v1 with X-Kimss-Agent-Id",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return _run_tool(
             mcp_tools.kimss_run_agent,
             assistant_id=assistant_id,
@@ -107,7 +122,14 @@ def build_mcp() -> Any:
         max_tokens: int | None = None,
         temperature: float | None = None,
     ) -> Any:
-        """Model completion without agent (POST /v1/models/completions), non-streaming."""
+        """DEPRECATED. Prefer OpenAI chat.completions. Legacy: POST /v1/models/completions."""
+        import warnings
+
+        warnings.warn(
+            "kimss_complete is deprecated; use OpenAI base_url=https://api.kimss.ai/v1",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return _run_tool(
             mcp_tools.kimss_complete,
             model=model,

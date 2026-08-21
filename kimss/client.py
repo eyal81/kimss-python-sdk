@@ -7,7 +7,14 @@ from __future__ import annotations
 import json
 import logging
 import os
+import warnings
 from typing import Any, Callable, Dict, Generator, List, MutableMapping, Optional, Union
+
+_INFERENCE_DEPRECATION = (
+    "KimssClient inference APIs are deprecated. Use the official OpenAI SDK with "
+    "base_url='https://api.kimss.ai/v1' and X-Kimss-Agent-Id headers. "
+    "See AI_INTEGRATION.md."
+)
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -212,14 +219,22 @@ class KimssClient:
         chat_type: str = "user_chat",
     ) -> Dict[str, Any]:
         """
+        .. deprecated:: 2.1.0
+            Use ``openai.OpenAI(base_url="https://api.kimss.ai/v1", ...)`` with
+            ``X-Kimss-Agent-Id`` instead.
+
         Send a message to an assistant and return the response.
         Same as get_agent(assistant_id).query(message, conversation_id=...).
 
         The Kimss HTTP API uses the JSON field ``thread_id`` for the
         conversation id; the SDK maps ``conversation_id`` to that field.
         """
-        return self.get_agent(assistant_id).query(
-            message, conversation_id=conversation_id, chat_type=chat_type
+        warnings.warn(_INFERENCE_DEPRECATION, DeprecationWarning, stacklevel=2)
+        return self.get_agent(assistant_id).run(
+            message,
+            conversation_id=conversation_id,
+            chat_type=chat_type,
+            _skip_deprecation=True,
         )
 
     def add_function_to_agent(
@@ -258,15 +273,20 @@ class Agent:
         chat_type: str = "user_chat",
     ) -> Dict[str, Any]:
         """
+        .. deprecated:: 2.1.0
+            Use the OpenAI gateway proxy instead of Agent.query.
+
         Send a message to this agent via ``POST /v1/agents/run``.
 
         ``conversation_id`` continues the same conversation as the previous
         turn (Kimss JSON field ``thread_id`` on the wire).
         """
+        warnings.warn(_INFERENCE_DEPRECATION, DeprecationWarning, stacklevel=2)
         result = self.run(
             message,
             conversation_id=conversation_id,
             chat_type=chat_type,
+            _skip_deprecation=True,
         )
         return result
 
@@ -281,8 +301,14 @@ class Agent:
         max_tool_rounds: int = 16,
         tags: Optional[Any] = None,
         routing_preference: Optional[str] = None,
+        _skip_deprecation: bool = False,
     ) -> Union["AgentRunResult", Dict[str, Any], Generator[Dict[str, Any], None, None]]:
-        """Run this agent via ``POST /v1/agents/run`` (``client.agents.run``)."""
+        """
+        .. deprecated:: 2.1.0
+            Use the OpenAI gateway proxy instead of Agent.run.
+        """
+        if not _skip_deprecation:
+            warnings.warn(_INFERENCE_DEPRECATION, DeprecationWarning, stacklevel=2)
         return self._client.agents.run(
             self.id,
             message,
@@ -293,6 +319,7 @@ class Agent:
             max_tool_rounds=max_tool_rounds,
             tags=tags,
             routing_preference=routing_preference,
+            _skip_deprecation=True,
         )
 
     def add_function(
@@ -364,6 +391,9 @@ class ImagesNamespace:
     ) -> Dict[str, Any]:
         """Generate image(s) from a text prompt.
 
+        .. deprecated:: 2.1.0
+            Prefer OpenAI-compatible image routes via the gateway when enabled.
+
         Args:
             prompt: Text description of the desired image.
             model: Logical model or deployment name (default ``gpt-image-2``).
@@ -375,6 +405,7 @@ class ImagesNamespace:
             OpenAI-compatible dict: ``{"created", "model", "data": [{"b64_json", ...}], "usage"}``.
             Decode ``data[0]["b64_json"]`` with :func:`base64.b64decode` to get bytes.
         """
+        warnings.warn(_INFERENCE_DEPRECATION, DeprecationWarning, stacklevel=2)
         text = (prompt or "").strip()
         if not text:
             raise ValueError("images.generate requires a non-empty prompt")
@@ -413,10 +444,14 @@ class ModelsNamespace:
     ) -> Union[Dict[str, Any], Generator[Dict[str, Any], None, None]]:
         """Create a model completion.
 
+        .. deprecated:: 2.1.0
+            Use ``openai.OpenAI(base_url="https://api.kimss.ai/v1").chat.completions.create``.
+
         Prefer ``messages`` (chat turns). ``prompt`` is accepted as a convenience
         alias for a single user message — Digital Workers / older call sites may
         pass ``prompt=`` the same way as ``agents.run``.
         """
+        warnings.warn(_INFERENCE_DEPRECATION, DeprecationWarning, stacklevel=2)
         if messages is None:
             text = (prompt or "").strip()
             if not text:
@@ -623,7 +658,7 @@ class AgentsRunV1:
     - ``create``   -> POST /v1/agents/create (Foundry-hosted; management scope).
     - ``register`` -> POST /v1/agents/register (customer-owned inventory; management scope).
     - ``get``      -> local Agent handle (no HTTP).
-    - ``run``      -> POST /v1/agents/run (hosted orchestration).
+    - ``run``      -> POST /v1/agents/run (**deprecated** for inference; prefer OpenAI gateway).
     """
 
     def __init__(self, client: KimssClient) -> None:
@@ -734,13 +769,19 @@ class AgentsRunV1:
         chat_type: str = "user_chat",
         tools: Optional[Dict[str, Any]] = None,
         max_tool_rounds: int = 16,
+        _skip_deprecation: bool = False,
     ) -> Union[AgentRunResult, Dict[str, Any], Generator[Dict[str, Any], None, None]]:
         """Run an agent turn.
+
+        .. deprecated:: 2.1.0
+            Use the OpenAI gateway proxy with ``X-Kimss-Agent-Id`` instead of ``agents.run``.
 
         When ``tools`` is a mapping of ``{name: callable}``, the SDK executes those
         functions locally whenever the API returns ``requires_action`` (client-side
         tool loop / Agentic RAG pattern).
         """
+        if not _skip_deprecation:
+            warnings.warn(_INFERENCE_DEPRECATION, DeprecationWarning, stacklevel=2)
         aid = str(assistant_id or "").strip() or str(agent_id or "").strip()
         msg_src = message if message is not None else prompt
         usr_chat = "" if msg_src is None else str(msg_src)

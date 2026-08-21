@@ -1,14 +1,23 @@
 #!/usr/bin/env python3
-"""Example 02: create an agent then run a first message (env: KIMSS_API_KEY)."""
+"""DEPRECATED inference demo — prefer examples/00_gateway_proxy.py.
+
+Control-plane create may still be useful; do not use agents.run for new apps.
+"""
 from __future__ import annotations
 
 import os
 import sys
+import warnings
 
 from kimss import KimssClient
 
 
 def main() -> None:
+    warnings.warn(
+        "02_create_agent.py uses deprecated agents.run; prefer OpenAI gateway (00_gateway_proxy.py)",
+        DeprecationWarning,
+        stacklevel=1,
+    )
     key = (os.environ.get("KIMSS_API_KEY") or "").strip()
     if not key:
         print("Set KIMSS_API_KEY", file=sys.stderr)

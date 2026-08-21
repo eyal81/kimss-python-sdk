@@ -1,14 +1,20 @@
 #!/usr/bin/env python3
-"""Example 04: model completions — non-stream and stream (env: KIMSS_API_KEY, KIMSS_MODEL)."""
+"""DEPRECATED — prefer examples/00_gateway_proxy.py (OpenAI chat.completions)."""
 from __future__ import annotations
 
 import os
 import sys
+import warnings
 
 from kimss import KimssClient
 
 
 def main() -> None:
+    warnings.warn(
+        "04_models_completion.py uses deprecated models.create; prefer 00_gateway_proxy.py",
+        DeprecationWarning,
+        stacklevel=1,
+    )
     key = (os.environ.get("KIMSS_API_KEY") or "").strip()
     model = (os.environ.get("KIMSS_MODEL") or "").strip()
     if not key or not model:

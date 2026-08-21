@@ -1,59 +1,61 @@
 # Getting started with the Kimss Secure AI Gateway
 
-Route existing OpenAI-compatible traffic through Kimss in about five minutes. Kimss is the **Secure AI Gateway** and **Governance Control Plane**: identity, audit, kill switch, and a provider vault. You bring the models (**BYOI**). Kimss does not host inference and does not charge for compute.
+**Track, govern, and secure autonomous agents with exactly 1 line of code.**
 
-**Developer tier (Always Free):** 25,000 governed requests/month, 14-day telemetry retention, up to 5 workspace members. No credit card.
+Kimss is the **Secure AI Gateway** and **Governance Control Plane**: identity, audit, kill switch, and a provider vault. You bring the models (**BYOI**).
 
-## Step 1 — Vault provider keys
+**Developer tier (Always Free):** 25,000 governed requests/month. No credit card.
 
-Open **Governance → Provider Vault** (`/app/governance/custom-models`). Add your OpenAI, Azure OpenAI / Foundry, Anthropic, DeepSeek, or vLLM endpoint. The key is stored vaulted and is never returned to clients.
+## Step 1 — Sign In & Vault
 
-## Step 2 — Generate a Gateway key
+Open **Governance → Provider Vault** / Connected Infrastructure (`/app/governance/custom-models`). Add your OpenAI, Azure OpenAI / Foundry, Anthropic, DeepSeek, or vLLM endpoint. The key is vaulted and never returned to clients.
 
-In the app, open **Gateway** and click **Generate Key**. Copy the `kimss_...` secret once. The same keys live under **Governance → API Keys**.
+## Step 2 — Mint a Control-Plane key
 
-## Step 3 — Route traffic (pick one)
+Open **Gateway** → **Generate Key**. Copy the `kimss_...` secret once. Same keys under **Governance → API Keys**.
 
-### Zero-code `.env` drop-in
+## Step 3 — Route traffic (zero refactoring)
+
+### OpenAI client (recommended)
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    base_url=os.getenv("KIMSS_GATEWAY_URL", "https://api.kimss.ai/v1"),
+    api_key=os.getenv("KIMSS_WORKSPACE_KEY") or os.getenv("KIMSS_API_KEY"),
+)
+response = client.chat.completions.create(
+    model=os.getenv("KIMSS_MODEL", "custom:your-vaulted-model"),
+    messages=[{"role": "user", "content": "Hello via Kimss Gateway"}],
+    extra_headers={
+        "X-Kimss-Agent-Id": os.getenv("KIMSS_AGENT_ID", "my_agent"),
+        "X-Kimss-Agent-Name": os.getenv("KIMSS_AGENT_NAME", "My Agent"),
+    },
+)
+```
+
+### Zero-code `.env`
 
 ```bash
 OPENAI_BASE_URL="https://api.kimss.ai/v1"
 OPENAI_API_KEY="kimss_your_kimss_key"
 ```
 
-No application code change. Official OpenAI clients read these variables.
-
-### OpenAI client `base_url` swap
-
-```python
-from openai import OpenAI
-
-client = OpenAI(api_key="kimss_...", base_url="https://api.kimss.ai/v1")
-response = client.chat.completions.create(
-    model="gpt-4o",  # or your workspace logical_id / custom:<vaulted_id>
-    messages=[{"role": "user", "content": "Hello via Kimss Gateway"}],
-)
-```
-
-### Native Kimss SDK
-
-```python
-from kimss import KimssClient
-
-client = KimssClient(api_key="kimss_...", base_url="https://api.kimss.ai")
-result = client.agents.get("asst_xxxx").run("Execute governed workflow", stream=False)
-print(result.text)
-```
-
-Official Anthropic and Azure OpenAI SDKs are **not** inbound drop-ins today. Vault those providers, then call Kimss with the OpenAI-compatible `/v1` client or the native SDK (`model=custom:<id>`).
+Official Anthropic and Azure SDKs are **not** inbound drop-ins. Vault those providers, then call Kimss with the OpenAI-compatible `/v1` client.
 
 ## Step 4 — Monitor and kill switch
 
-- **Gateway → Recent calls** — the request, attributed to an agent (auto-discovered if you omitted `X-Kimss-Agent-Id`).
-- **Governance → Agents** — disable an agent. Routed calls return HTTP **403** with `error` / `code` **`agent_disabled`**.
+- **Gateway → Recent calls** — attributed to your `X-Kimss-Agent-Id` (or JIT-discovered).
+- **Governance → Agents** — disable an agent → HTTP **403** `agent_disabled`.
+
+## Control plane (optional)
+
+`pip install kimss` for `agents.register` and `usage.report`. Kill switch / audit / MCP sync: Governance UI or REST (`POST /agent_set_status/`, `POST /audit_log/`). Do not use `KimssClient` for chat/completions.
 
 ## Related
 
-- [README.md](README.md) — install, MCP, full API surface
-- [docs/KIMSS_ONBOARDING.md](docs/KIMSS_ONBOARDING.md) — instructions for AI coding agents
-- [docs/llm-context.md](docs/llm-context.md) — dense SDK → HTTP map
+- [AI_INTEGRATION.md](AI_INTEGRATION.md) — mandatory rules for AI coding assistants
+- [README.md](README.md)
+- [docs/llm-context.md](docs/llm-context.md)

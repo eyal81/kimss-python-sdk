@@ -1,5 +1,5 @@
 ---
-description: Kimss product and API conventions when integrating agents, MCP, or the Python SDK in Cursor.
+description: Kimss product and API conventions when integrating the gateway, MCP, or the Python control-plane package in Cursor.
 alwaysApply: false
 ---
 
@@ -7,37 +7,29 @@ alwaysApply: false
 
 ## What Kimss is
 
-Kimss is a secured enterprise platform for **management and implementation** of conversational AI agents (orchestration, workspaces, usage, and governance). Integrations should treat Kimss as the product surface, not only the MCP transport.
+Kimss is a **Secure AI Gateway** and **Governance Control Plane** for autonomous agents (identity, audit trail, kill switch, provider vault). It does not host inference. Integrations should use the OpenAI-compatible gateway, not custom chat wrappers.
 
 ## Canonical hosts
 
-- Production API: `https://api.kimss.ai` (no trailing slash)
+- Gateway (OpenAI-compat): `https://api.kimss.ai/v1`
+- Control-plane API root: `https://api.kimss.ai` (no trailing slash)
 - Staging: `https://stg.kimss.ai`
-
-Do **not** document or recommend raw cloud provider URLs (e.g. `*.azurewebsites.net`) as customer base URLs — use the canonical API host only.
 
 ## Authentication
 
-- **API key (default for SDK and MCP):** HTTP header `X-Kimss-Key`. Environment variable for MCP: `KIMSS_API_KEY`. Never commit keys; never log key values.
-- **Microsoft Entra ID (headless):** `Authorization: Bearer` from `credential.get_token(scope)`; scope is typically `api://<kimss-api-app-id>/.default` (see SDK docs). Optional env: `KIMSS_TOKEN_SCOPE` / `KIMSS_API_SCOPE`.
-- **Workspace scoping:** optional `KIMSS_WORKSPACE_ID` → `X-Workspace-ID` and `tenant_id` in JSON when applicable.
+- **Gateway / OpenAI clients:** `api_key=kimss_...` (Bearer) plus **`X-Kimss-Agent-Id`** (required for attribution / JIT discovery / kill switch).
+- **Control-plane `KimssClient` / MCP:** HTTP header `X-Kimss-Key`. Env: `KIMSS_WORKSPACE_KEY` or `KIMSS_API_KEY`.
+- Never commit keys; never log key values.
 
-## API and SDK conventions
+## Conventions
 
-- Prefer **`POST /v1/agents/run`** for new agent turns (non-streaming in MCP v1).
-- Legacy chat: `POST /assistant_chat/` (still supported by SDK `chat` / `Agent.query`).
-- Many JSON responses wrap payloads in **`{"res": ...}`**.
-- **Conversation id:** wire field **`thread_id`** corresponds to SDK **`conversation_id`** on `agents.run` / results.
-- **Agent lifecycle:** `POST /v1/agents/create` requires an API key with **management** scope where policy applies.
-- **Ownership:** only **owned** (personal) agents should be updated or given function tools; shared agents return **403** — do not assume mutability.
-- **Typed errors (SDK):** `KimssCreditExhausted`, `KimssRateLimited`, `KimssSubscriptionRequired` — surface to users; avoid tight retry loops on credit/subscription failures.
+- **Preferred inference:** `openai.OpenAI(base_url="https://api.kimss.ai/v1", ...)` → `POST /v1/chat/completions`.
+- **Deprecated:** `KimssClient.agents.run`, `chat`, `Agent.query`, `models.create`, MCP `kimss_chat` / `kimss_run_agent` / `kimss_complete`.
+- Control plane: `agents.register`, `usage.report`; kill switch `POST /agent_set_status/`; audit `POST /audit_log/`.
+- Do not point Anthropic Messages clients at Kimss inbound URLs — vault Anthropic and call via OpenAI-compat `/v1`.
 
-## Dense context for assistants
+## Dense context
 
-- [docs/KIMSS_ONBOARDING.md](docs/KIMSS_ONBOARDING.md) — refactor existing OpenAI clients to the gateway.
-- [docs/llm-context.md](docs/llm-context.md) and repo root [.llms.txt](.llms.txt) — SDK ↔ HTTP map, MCP tool list, error dictionary.
-
-## MCP server (stdio)
-
-- Package: `pip install 'kimss[mcp]'` or run via `uvx --from kimss[mcp] kimss-mcp-server`.
-- Tools are **non-streaming** in v1. See `kimss/mcp/tools.py` for argument schemas.
+- [AI_INTEGRATION.md](AI_INTEGRATION.md) — mandatory A2A rules.
+- [docs/KIMSS_ONBOARDING.md](docs/KIMSS_ONBOARDING.md)
+- [docs/llm-context.md](docs/llm-context.md) and [.llms.txt](.llms.txt)
