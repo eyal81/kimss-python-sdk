@@ -11,11 +11,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/eyal81/kimss-python-sdk.git"
+    "url": "https://github.com/kimssai/kimss-python-sdk.git"
   },
   "homepage": "https://kimss.ai",
-  "documentation": "https://github.com/eyal81/kimss-python-sdk/blob/main/docs/llm-context.md",
-  "support": "https://github.com/eyal81/kimss-python-sdk/issues",
+  "documentation": "https://github.com/kimssai/kimss-python-sdk/blob/main/docs/llm-context.md",
+  "support": "https://github.com/kimssai/kimss-python-sdk/issues",
   "license": "MIT",
   "keywords": ["kimss", "mcp", "agents", "ai", "orchestration"],
   "server": {

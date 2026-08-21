@@ -38,4 +38,4 @@ All notable changes to the **kimss** PyPI package are documented here. The canon
 
 ## [1.1.0] and earlier
 
-See [GitHub releases](https://github.com/eyal81/kimss-python-sdk/releases) for older package history on the public mirror.
+See [GitHub releases](https://github.com/kimssai/kimss-python-sdk/releases) for older package history on the public mirror.

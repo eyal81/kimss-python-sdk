@@ -7,7 +7,7 @@
   "homepage": "https://kimss.ai",
   "repository": {
     "type": "git",
-    "url": "https://github.com/eyal81/kimss-python-sdk.git"
+    "url": "https://github.com/kimssai/kimss-python-sdk.git"
   },
   "keywords": ["mcp", "agent-orchestration", "enterprise-ai", "azure-ai-foundry"],
   "categories": ["Developer Tools", "AI"],
