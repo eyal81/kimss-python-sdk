@@ -7,26 +7,27 @@ alwaysApply: false
 
 ## What Kimss is
 
-Kimss is a **Secure AI Gateway** and **Governance Control Plane** for autonomous agents (identity, audit trail, kill switch, provider vault). It does not host inference. Integrations should use the OpenAI-compatible gateway, not custom chat wrappers.
+Kimss is a **Secure AI Gateway** and **Governance Control Plane** for autonomous agents (identity, audit trail, kill switch, provider vault). It does not host inference. Integrations should keep the native OpenAI or Anthropic SDK and point it at the dual-listener gateway, not custom chat wrappers.
 
 ## Canonical hosts
 
-- Gateway (OpenAI-compat): `https://api.kimss.ai/v1`
+- Gateway (OpenAI): `https://api.kimss.ai/v1`
+- Gateway (Anthropic): `https://api.kimss.ai` (SDK appends `/v1/messages`)
 - Control-plane API root: `https://api.kimss.ai` (no trailing slash)
 - Staging: `https://stg.kimss.ai`
 
 ## Authentication
 
-- **Gateway / OpenAI clients:** `api_key=kimss_...` (Bearer) plus **`X-Kimss-Agent-Id`** (required for attribution / JIT discovery / kill switch).
+- **Gateway / OpenAI or Anthropic clients:** `api_key=kimss_...` (Bearer or `x-api-key`) plus **`X-Kimss-Agent-Id`** (required for attribution / JIT discovery / kill switch).
 - **Control-plane `KimssClient` / MCP:** HTTP header `X-Kimss-Key`. Env: `KIMSS_WORKSPACE_KEY` or `KIMSS_API_KEY`.
 - Never commit keys; never log key values.
 
 ## Conventions
 
-- **Preferred inference:** `openai.OpenAI(base_url="https://api.kimss.ai/v1", ...)` → `POST /v1/chat/completions`.
+- **Preferred inference:** keep the native SDK. OpenAI → `base_url="https://api.kimss.ai/v1"` (`POST /v1/chat/completions`). Anthropic → `base_url="https://api.kimss.ai"` (`POST /v1/messages`).
 - **Deprecated:** `KimssClient.agents.run`, `chat`, `Agent.query`, `models.create`, MCP `kimss_chat` / `kimss_run_agent` / `kimss_complete`.
 - Control plane: `agents.register`, `usage.report`; kill switch `POST /agent_set_status/`; audit `POST /audit_log/`.
-- Do not point Anthropic Messages clients at Kimss inbound URLs — vault Anthropic and call via OpenAI-compat `/v1`.
+- Azure official clients are not inbound drop-ins. Vault Azure (and any backend) under Provider Vault.
 
 ## Dense context
 

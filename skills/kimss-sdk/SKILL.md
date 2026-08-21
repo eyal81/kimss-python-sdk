@@ -1,6 +1,6 @@
 ---
 name: kimss-sdk
-description: Integrate Kimss via OpenAI gateway proxy (base_url + Agent-Id headers). Optional kimss package for control-plane register/usage only.
+description: Integrate Kimss via dual-listener gateway (OpenAI /v1 or Anthropic /v1/messages + Agent-Id headers). Optional kimss package for control-plane register/usage only.
 ---
 
 # Kimss Python SDK / Gateway
@@ -12,9 +12,9 @@ description: Integrate Kimss via OpenAI gateway proxy (base_url + Agent-Id heade
 
 ## Preferred inference (no Kimss SDK)
 
-```bash
-pip install openai
-```
+Keep the native SDK already in the app.
+
+**OpenAI** — `pip install openai`, `base_url=https://api.kimss.ai/v1`:
 
 ```python
 import os
@@ -33,6 +33,29 @@ resp = client.chat.completions.create(
     },
 )
 ```
+
+**Anthropic** — `pip install anthropic`, `base_url=https://api.kimss.ai` (SDK appends `/v1/messages`):
+
+```python
+import os
+from anthropic import Anthropic
+
+client = Anthropic(
+    base_url=os.getenv("ANTHROPIC_BASE_URL", "https://api.kimss.ai"),
+    api_key=os.getenv("KIMSS_WORKSPACE_KEY") or os.getenv("KIMSS_API_KEY"),
+)
+resp = client.messages.create(
+    model=os.getenv("KIMSS_MODEL", "custom:your-model"),
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello"}],
+    extra_headers={
+        "X-Kimss-Agent-Id": os.getenv("KIMSS_AGENT_ID", "my_agent"),
+        "X-Kimss-Agent-Name": os.getenv("KIMSS_AGENT_NAME", "My Agent"),
+    },
+)
+```
+
+See [examples/00b_anthropic_proxy.py](../../examples/00b_anthropic_proxy.py).
 
 ## Control plane (optional)
 
@@ -59,3 +82,4 @@ Kill switch: `agent_disabled`. Also: `KimssCreditExhausted`, `KimssRateLimited`,
 - [AI_INTEGRATION.md](../../AI_INTEGRATION.md)
 - [docs/llm-context.md](../../docs/llm-context.md)
 - [examples/00_gateway_proxy.py](../../examples/00_gateway_proxy.py)
+- [examples/00b_anthropic_proxy.py](../../examples/00b_anthropic_proxy.py)

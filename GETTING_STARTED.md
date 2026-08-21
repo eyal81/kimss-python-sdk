@@ -16,7 +16,7 @@ Open **Gateway** → **Generate Key**. Copy the `kimss_...` secret once. Same ke
 
 ## Step 3 — Route traffic (zero refactoring)
 
-### OpenAI client (recommended)
+### OpenAI client
 
 ```python
 import os
@@ -36,14 +36,40 @@ response = client.chat.completions.create(
 )
 ```
 
+### Anthropic client
+
+```python
+import os
+from anthropic import Anthropic
+
+client = Anthropic(
+    base_url=os.getenv("ANTHROPIC_BASE_URL", "https://api.kimss.ai"),
+    api_key=os.getenv("KIMSS_WORKSPACE_KEY") or os.getenv("KIMSS_API_KEY"),
+)
+response = client.messages.create(
+    model=os.getenv("KIMSS_MODEL", "custom:your-vaulted-model"),
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello via Kimss Gateway"}],
+    extra_headers={
+        "X-Kimss-Agent-Id": os.getenv("KIMSS_AGENT_ID", "my_agent"),
+        "X-Kimss-Agent-Name": os.getenv("KIMSS_AGENT_NAME", "My Agent"),
+    },
+)
+```
+
+The Anthropic SDK appends `/v1/messages`. Do not set `base_url` to `https://api.kimss.ai/v1`.
+
 ### Zero-code `.env`
 
 ```bash
 OPENAI_BASE_URL="https://api.kimss.ai/v1"
 OPENAI_API_KEY="kimss_your_kimss_key"
+# or
+ANTHROPIC_BASE_URL="https://api.kimss.ai"
+ANTHROPIC_API_KEY="kimss_your_kimss_key"
 ```
 
-Official Anthropic and Azure SDKs are **not** inbound drop-ins. Vault those providers, then call Kimss with the OpenAI-compatible `/v1` client.
+Azure official clients are **not** inbound drop-ins. Vault Azure (and any other backend) under Provider Vault, then call Kimss with the OpenAI or Anthropic client above.
 
 ## Step 4 — Monitor and kill switch
 
@@ -52,7 +78,7 @@ Official Anthropic and Azure SDKs are **not** inbound drop-ins. Vault those prov
 
 ## Control plane (optional)
 
-`pip install kimss` for `agents.register` and `usage.report`. Kill switch / audit / MCP sync: Governance UI or REST (`POST /agent_set_status/`, `POST /audit_log/`). Do not use `KimssClient` for chat/completions.
+`pip install kimss` for `agents.register` and `usage.report`. Kill switch / audit / MCP sync: Governance UI or REST (`POST /agent_set_status/`, `POST /audit_log/`). Do not use `KimssClient` for chat/completions/messages.
 
 ## Related
 

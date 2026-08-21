@@ -5,13 +5,15 @@ Pair with [AI_INTEGRATION.md](../AI_INTEGRATION.md), [README.md](../README.md), 
 ## Clean machine checklist (do this first)
 
 1. **Python ≥ 3.10** available.
-2. For **inference**: `pip install openai` — point at Kimss gateway (no Kimss SDK required).
+2. For **inference**: keep the native SDK already in the repo — `pip install openai` and/or `pip install anthropic`. Point it at the Kimss gateway (no Kimss SDK required).
 3. Optional control-plane package: `pip install kimss` (register agents, report usage). Declared dep: `requests>=2.28`.
-4. Set env: `KIMSS_WORKSPACE_KEY` or `KIMSS_API_KEY`, `KIMSS_AGENT_ID`, optional `KIMSS_GATEWAY_URL` (default `https://api.kimss.ai/v1`).
-5. **Preferred first call:** official OpenAI client → `POST /v1/chat/completions` with `X-Kimss-Agent-Id`.
+4. Set env: `KIMSS_WORKSPACE_KEY` or `KIMSS_API_KEY`, `KIMSS_AGENT_ID`. OpenAI default host `https://api.kimss.ai/v1`. Anthropic default host `https://api.kimss.ai`.
+5. **Preferred first call:** official OpenAI client → `POST /v1/chat/completions` **or** official Anthropic client → `POST /v1/messages`, always with `X-Kimss-Agent-Id`.
 6. **Deprecated:** `KimssClient.agents.run`, `chat`, `Agent.query`, `models.create`, MCP `kimss_chat` / `kimss_run_agent` / `kimss_complete`.
 
-## Preferred inference (gateway proxy)
+## Preferred inference (dual-listener gateway)
+
+**OpenAI** (`base_url=https://api.kimss.ai/v1`):
 
 ```python
 import os
@@ -31,7 +33,28 @@ resp = client.chat.completions.create(
 )
 ```
 
-Auth on `/v1`: `Authorization: Bearer kimss_...` or `X-Kimss-Key`.
+**Anthropic** (`base_url=https://api.kimss.ai` — the SDK appends `/v1/messages`):
+
+```python
+import os
+from anthropic import Anthropic
+
+client = Anthropic(
+    base_url=os.getenv("ANTHROPIC_BASE_URL", "https://api.kimss.ai"),
+    api_key=os.getenv("KIMSS_WORKSPACE_KEY") or os.getenv("KIMSS_API_KEY"),
+)
+resp = client.messages.create(
+    model=os.getenv("KIMSS_MODEL", "custom:your-vaulted-model"),
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello"}],
+    extra_headers={
+        "X-Kimss-Agent-Id": os.getenv("KIMSS_AGENT_ID", "my_agent"),
+        "X-Kimss-Agent-Name": os.getenv("KIMSS_AGENT_NAME", "My Agent"),
+    },
+)
+```
+
+Auth: `Authorization: Bearer kimss_...`, `X-Kimss-Key`, or Anthropic-style `x-api-key`.
 
 ## Control plane (DevOps) — `kimss` package
 
@@ -55,15 +78,16 @@ Native auth for control-plane calls: **`X-Kimss-Key`**. Base URL for `KimssClien
 
 Still valid management: `agents.create`, `agents.register`, `usage.report`, `files.upload`, `add_function_to_agent`.
 
-## OpenAI-compatible base URL
+## Dual-listener base URLs
 
 ```text
-base_url = https://api.kimss.ai/v1
-api_key  = kimss_...
-headers  = X-Kimss-Agent-Id, X-Kimss-Agent-Name
+OpenAI:    base_url = https://api.kimss.ai/v1
+Anthropic: base_url = https://api.kimss.ai
+api_key    = kimss_...
+headers    = X-Kimss-Agent-Id, X-Kimss-Agent-Name
 ```
 
-Do **not** point Anthropic Messages or Azure official clients at Kimss inbound URLs.
+Do **not** point Azure official clients at Kimss inbound URLs. Vault Azure and call through the OpenAI or Anthropic listener.
 
 ## Error code dictionary
 
@@ -77,4 +101,4 @@ Do **not** point Anthropic Messages or Azure official clients at Kimss inbound U
 
 ## MCP tools (stdio) — optional IDE
 
-Install: `pip install 'kimss[mcp]'`. Inference tools (`kimss_chat`, `kimss_run_agent`, `kimss_complete`) are **deprecated**; prefer OpenAI gateway from app code. Management tools remain for create/upload/function attach.
+Install: `pip install 'kimss[mcp]'`. Inference tools (`kimss_chat`, `kimss_run_agent`, `kimss_complete`) are **deprecated**; prefer the OpenAI or Anthropic gateway from app code. Management tools remain for create/upload/function attach.

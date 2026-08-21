@@ -2,6 +2,16 @@
 
 All notable changes to the **kimss** PyPI package are documented here. The canonical source for this file in development is the monorepo path `kimss_sdk/CHANGELOG.md`.
 
+## [2.1.1] — 2026-08-21
+
+### Added
+
+- Dual-listener inbound guide: official Anthropic SDK at `base_url=https://api.kimss.ai` → `POST /v1/messages`, with `X-Kimss-Agent-Id` ([AI_INTEGRATION.md](AI_INTEGRATION.md), [GETTING_STARTED.md](GETTING_STARTED.md), [examples/00b_anthropic_proxy.py](examples/00b_anthropic_proxy.py)).
+
+### Fixed
+
+- Docs no longer say the Anthropic SDK is not an inbound drop-in. Azure official clients remain vault-only backends.
+
 ## [2.1.0] — 2026-08-21
 
 ### Deprecated

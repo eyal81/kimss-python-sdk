@@ -116,7 +116,7 @@ Cursor / Windsurf / Claude Desktop can run `kimss-mcp-server` (`pip install 'kim
 
 ## Examples
 
-See [examples/00_gateway_proxy.py](examples/00_gateway_proxy.py) for the canonical pattern.
+See [examples/00_gateway_proxy.py](examples/00_gateway_proxy.py) (OpenAI) and [examples/00b_anthropic_proxy.py](examples/00b_anthropic_proxy.py) (Anthropic).
 
 ## License
 
