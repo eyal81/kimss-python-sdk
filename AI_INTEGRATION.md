@@ -2,52 +2,59 @@
 
 **Strict directive for Cursor, Windsurf, Claude Code, Devin, and other coding assistants.**
 
-Kimss is a **Model-Agnostic Enterprise AI Gateway and Governance Control Plane**. It does **not** host inference. Integrate via an invisible OpenAI-compatible proxy — never via custom chat wrappers.
+Kimss is a **Model-Agnostic Enterprise AI Gateway and Governance Control Plane** with a **dual-listener** inbound proxy:
+
+- OpenAI syntax → `POST https://api.kimss.ai/v1/chat/completions`
+- Anthropic syntax → `POST https://api.kimss.ai/v1/messages`
 
 ## Rules (do not violate)
 
-1. **Never** use a custom `KimssClient` (Python or Java) for chat/completions or any LLM inference.
-2. **Always** use the standard **OpenAI** native SDK for governed inference. You may mention Anthropic as a **vaulted provider**; do **not** point `Anthropic(base_url="https://api.kimss.ai/...")` at Kimss — inbound is OpenAI-compatible `/v1` only. Vault Anthropic in Kimss, then call through the OpenAI client with your vaulted model id.
-3. **Always** route traffic by setting the base URL to `https://api.kimss.ai/v1`.
-4. **Always** inject the `X-Kimss-Agent-Id` HTTP header (and preferably `X-Kimss-Agent-Name`) so Kimss can attribute, JIT-discover, audit, and kill-switch the agent.
-5. If using **Hermis** orchestration (or any HTTP interceptor layer), pass those headers through the standard interceptor / default-headers path — never strip them.
+1. **Never** use a custom `KimssClient` for chat/completions/messages or any LLM inference.
+2. **Identify** whether the user's codebase uses the `openai` or `anthropic` SDK natively. **Keep their native SDK** — zero data-plane refactoring.
+3. **For OpenAI:** set `base_url` to `https://api.kimss.ai/v1`.
+4. **For Anthropic:** set `base_url` to `https://api.kimss.ai` (the SDK appends `/v1/messages`).
+5. **Always** inject `X-Kimss-Agent-Id` (and preferably `X-Kimss-Agent-Name`) for JIT attribution, audit, and kill-switch.
+6. Hermis / HTTP interceptors: forward Agent-Id headers; never strip them.
 
-## Canonical Python pattern
+## OpenAI
 
 ```python
-import os
 from openai import OpenAI
 
 client = OpenAI(
-    base_url=os.getenv("KIMSS_GATEWAY_URL", "https://api.kimss.ai/v1"),
-    api_key=os.getenv("KIMSS_WORKSPACE_KEY") or os.getenv("KIMSS_API_KEY"),
+    base_url="https://api.kimss.ai/v1",
+    api_key="kimss_workspace_key",
 )
-
 response = client.chat.completions.create(
-    model=os.getenv("KIMSS_MODEL", "custom:kimss-gpt-5-3-chat"),
-    messages=[{"role": "user", "content": "Execute database audit."}],
-    extra_headers={
-        "X-Kimss-Agent-Id": os.getenv("KIMSS_AGENT_ID", "enterprise_db_auditor"),
-        "X-Kimss-Agent-Name": os.getenv("KIMSS_AGENT_NAME", "Database Auditor Agent"),
-    },
+    model="custom:kimss-gpt-5-3",
+    messages=[{"role": "user", "content": "Execute audit."}],
+    extra_headers={"X-Kimss-Agent-Id": "enterprise_auditor"},
 )
 ```
 
-## Canonical Java pattern (OpenAI OkHttp)
+## Anthropic
 
-```java
-OpenAIClient client = OpenAIOkHttpClient.builder()
-    .baseUrl("https://api.kimss.ai/v1")
-    .apiKey(System.getenv("KIMSS_WORKSPACE_KEY"))
-    .putHeader("X-Kimss-Agent-Id", System.getenv().getOrDefault("KIMSS_AGENT_ID", "enterprise_db_auditor"))
-    .putHeader("X-Kimss-Agent-Name", System.getenv().getOrDefault("KIMSS_AGENT_NAME", "Database Auditor Agent"))
-    .build();
+```python
+from anthropic import Anthropic
+
+client = Anthropic(
+    base_url="https://api.kimss.ai",
+    api_key="kimss_workspace_key",
+)
+response = client.messages.create(
+    model="custom:kimss-claude-3-5",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Execute audit."}],
+    extra_headers={"X-Kimss-Agent-Id": "enterprise_auditor"},
+)
 ```
+
+Auth also accepts `X-Kimss-Key` and Anthropic-style `x-api-key` with a `kimss_...` workspace key.
 
 ## What `KimssClient` is for
 
-Use the `kimss` / `kimss-java` packages only as **control-plane / DevOps** tools (register agents, report BYO usage). Inference methods such as `agents.run`, `chat`, and `models.create` are **deprecated**.
+Control-plane / DevOps only (`agents.register`, `usage.report`). Inference methods are deprecated.
 
 ## Kill switch
 
-HTTP **403** with `error` / `detail.error` = `agent_disabled`. Keys are `kimss_...` (never `km_live_...`). Never describe Kimss as “zero-trust”.
+HTTP **403** with `agent_disabled` (OpenAI `error.code` or Anthropic error body). Never say “zero-trust”.

@@ -1,10 +1,6 @@
 # kimss
-Kimss Secure AI Gateway + Governance Control Plane (https://kimss.ai).
+Kimss dual-listener Secure AI Gateway (OpenAI /v1/chat/completions + Anthropic /v1/messages).
 
-- AI assistants: AI_INTEGRATION.md (mandatory)
-- Human README: README.md — gateway proxy first (OpenAI base_url + X-Kimss-Agent-Id)
-- Getting started: GETTING_STARTED.md
-- Dense map: docs/llm-context.md
-- Inference: official openai package → https://api.kimss.ai/v1 (KimssClient chat/agents.run/models.create are DEPRECATED)
-- Control plane package `kimss`: agents.register, usage.report; kill switch / audit / MCP via REST + Governance UI
-- Optional MCP: kimss-mcp-server (inference MCP tools deprecated)
+- AI_INTEGRATION.md (mandatory A2A)
+- Keep native openai or anthropic SDK; never KimssClient for inference
+- Control plane: pip install kimss → agents.register / usage.report

@@ -1,12 +1,10 @@
 # Kimss Python SDK — AI assistants
 
-Follow [AI_INTEGRATION.md](AI_INTEGRATION.md) for every integration.
+Follow [AI_INTEGRATION.md](AI_INTEGRATION.md).
 
-1. Never use `KimssClient` for chat/completions.
-2. Always use the official OpenAI SDK with `base_url=https://api.kimss.ai/v1`.
-3. Always inject `X-Kimss-Agent-Id` (and `X-Kimss-Agent-Name`) via `extra_headers` or default headers.
-4. Vault Anthropic/Azure in Kimss; do not point Anthropic Messages clients at `api.kimss.ai`.
-5. Hermis / interceptors: forward Agent-Id headers; never strip them.
-6. Kill switch: `agent_disabled`. Keys: `kimss_...`. Positioning: Secure AI Gateway & Governance Control Plane — never “zero-trust”.
-
-Dense map: [docs/llm-context.md](docs/llm-context.md). Humans: [GETTING_STARTED.md](GETTING_STARTED.md).
+1. Never use `KimssClient` for chat/completions/messages.
+2. Keep the developer's native `openai` or `anthropic` SDK.
+3. OpenAI → `base_url=https://api.kimss.ai/v1`. Anthropic → `base_url=https://api.kimss.ai`.
+4. Always inject `X-Kimss-Agent-Id` (and `X-Kimss-Agent-Name`).
+5. Hermis: forward Agent-Id headers.
+6. Kill switch: `agent_disabled`. Keys: `kimss_...`.
