@@ -21,7 +21,10 @@ def main() -> None:
     key = (os.environ.get("KIMSS_API_KEY") or "").strip()
     aid = (os.environ.get("KIMSS_ASSISTANT_ID") or "").strip()
     if not key or not aid:
-        print("Set KIMSS_API_KEY and KIMSS_ASSISTANT_ID (or use 00_gateway_proxy.py)", file=sys.stderr)
+        print(
+            "Set KIMSS_API_KEY and KIMSS_ASSISTANT_ID (or use 00_gateway_proxy.py)",
+            file=sys.stderr,
+        )
         raise SystemExit(1)
     base = (os.environ.get("KIMSS_BASE_URL") or "https://api.kimss.ai").rstrip("/")
     client = KimssClient(api_key=key, base_url=base)

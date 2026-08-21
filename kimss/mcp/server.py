@@ -58,7 +58,8 @@ def build_mcp() -> Any:
         import warnings
 
         warnings.warn(
-            "kimss_chat is deprecated; use OpenAI base_url=https://api.kimss.ai/v1 with X-Kimss-Agent-Id",
+            "kimss_chat is deprecated; use OpenAI "
+            "base_url=https://api.kimss.ai/v1 with X-Kimss-Agent-Id",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -102,7 +103,8 @@ def build_mcp() -> Any:
         import warnings
 
         warnings.warn(
-            "kimss_run_agent is deprecated; use OpenAI base_url=https://api.kimss.ai/v1 with X-Kimss-Agent-Id",
+            "kimss_run_agent is deprecated; use OpenAI "
+            "base_url=https://api.kimss.ai/v1 with X-Kimss-Agent-Id",
             DeprecationWarning,
             stacklevel=2,
         )

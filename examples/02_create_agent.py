@@ -14,7 +14,8 @@ from kimss import KimssClient
 
 def main() -> None:
     warnings.warn(
-        "02_create_agent.py uses deprecated agents.run; prefer OpenAI gateway (00_gateway_proxy.py)",
+        "02_create_agent.py uses deprecated agents.run; "
+        "prefer OpenAI gateway (00_gateway_proxy.py)",
         DeprecationWarning,
         stacklevel=1,
     )
